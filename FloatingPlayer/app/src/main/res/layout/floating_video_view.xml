@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<androidx.cardview.widget.CardView
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="top|left"
+    android:orientation="vertical"
+	app:cardBackgroundColor="@android:color/transparent"
+	app:cardCornerRadius="0dp"
+	app:cardElevation="5dp">
+    <TextureView
+        android:id="@+id/textureView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <ImageView
+        android:id="@+id/video_fullscreen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:visibility="gone"
+        android:src="@drawable/ic_fullscreen"/>
+
+    <ImageView
+        android:id="@+id/video_close"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="left"
+        android:visibility="gone"
+        android:src="@drawable/ic_close"/>
+
+    <ImageView
+        android:id="@+id/video_pip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right|center"
+        android:layout_marginRight="10dp"
+        android:visibility="gone"
+        android:src="@drawable/ic_picture_in_picture"/>
+    <ProgressBar
+        android:id="@+id/video_progressbar"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_gravity="bottom"
+        android:progressDrawable="@drawable/progress_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:progress="0"
+        android:max="100"/>
+
+</androidx.cardview.widget.CardView>
