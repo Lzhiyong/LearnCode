@@ -1,2 +1,2 @@
-# misc
-misc code
+# Learn Code
+learn code projects
