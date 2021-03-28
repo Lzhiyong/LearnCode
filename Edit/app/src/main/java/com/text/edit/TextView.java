@@ -28,7 +28,7 @@ import java.util.TimerTask;
 
 public class TextView extends View implements OnScrollListener {
 
-	private Paint mPaint;
+    private Paint mPaint;
     private TextPaint mTextPaint;
 
     private Drawable mDrawableCursorRes;
@@ -37,13 +37,13 @@ public class TextView extends View implements OnScrollListener {
     private Drawable mSelectHandleMiddle;
 
     private int mScrollX, mScrollY;
-	private int mCursorPosX, mCursorPosY;
+    private int mCursorPosX, mCursorPosY;
     private int mCursorLine, mCursorIndex;
 
     private int mCursorWidth;
     private int statusBarHeight;
     private int blinkActionBarHeight;
-	private int screenWidth, screenHeight;
+    private int screenWidth, screenHeight;
 
     private TextBuffer mTextBuffer;
 
@@ -111,7 +111,7 @@ public class TextView extends View implements OnScrollListener {
 
         requestFocus();
         setFocusable(true);
-        
+
         startBlink();
     }
 
@@ -135,7 +135,7 @@ public class TextView extends View implements OnScrollListener {
     public void setTextSize(int dip) {
         // dip to pixel
         int psize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                                                    dip, getResources().getDisplayMetrics());
+                    dip, getResources().getDisplayMetrics());
         mTextPaint.setTextSize(psize);
     }
 
@@ -220,7 +220,7 @@ public class TextView extends View implements OnScrollListener {
                         getTextMaxWidth() + screenWidth / 4,
                         mCursorPosY + getLineHeight(),
                         mPaint
-                        );
+                       );
     }
 
     public void drawCursor(Canvas canvas) {
@@ -236,7 +236,7 @@ public class TextView extends View implements OnScrollListener {
                                      getPaddingTop() + mCursorPosY,
                                      mCursorPosX - half + mCursorWidth,
                                      mCursorPosY + getLineHeight()
-                                     );
+                                    );
         mDrawableCursorRes.draw(canvas);
 
         //mSelectHandleMiddle.setBounds();
