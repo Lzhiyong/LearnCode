@@ -7,8 +7,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.lang.reflect.Field;
 
 public final class ScreenUtils {
-	
-	public static int getStatusBarHeight(Context context) {
+
+    public static int getStatusBarHeight(Context context) {
         int statusBarHeight = 0;
 
         try {
@@ -20,33 +20,33 @@ public final class ScreenUtils {
             e.printStackTrace();
         }
 
-		return statusBarHeight;
+        return statusBarHeight;
     }
-	
-	
-	public static int getActionBarHeight(Context context){
-		TypedValue typedValue = new TypedValue();
-		
-		int actionBarHeight = 0;
-		if (context.getTheme().resolveAttribute(android.R.attr.actionBarSize, typedValue, true)) {
-			actionBarHeight = TypedValue.complexToDimensionPixelSize(typedValue.data, 
-				context.getResources().getDisplayMetrics());
-		}
-		
-		return actionBarHeight;
-	}
-	
-	
-	public static int getScreenWidth(Context context){
-		DisplayMetrics dm = new DisplayMetrics();     
-		((AppCompatActivity)context).getWindowManager().getDefaultDisplay().getMetrics(dm);     
-		return dm.widthPixels;     
-	}
-	
-	
-	public static int getScreenHeight(Context context){
-		DisplayMetrics dm = new DisplayMetrics();     
-		((AppCompatActivity)context).getWindowManager().getDefaultDisplay().getMetrics(dm);         
-		return dm.heightPixels; 
-	}
+
+
+    public static int getActionBarHeight(Context context) {
+        TypedValue typedValue = new TypedValue();
+
+        int actionBarHeight = 0;
+        if (context.getTheme().resolveAttribute(android.R.attr.actionBarSize, typedValue, true)) {
+            actionBarHeight = TypedValue.complexToDimensionPixelSize(typedValue.data,
+                              context.getResources().getDisplayMetrics());
+        }
+
+        return actionBarHeight;
+    }
+
+
+    public static int getScreenWidth(Context context) {
+        DisplayMetrics dm = new DisplayMetrics();
+        ((AppCompatActivity)context).getWindowManager().getDefaultDisplay().getMetrics(dm);
+        return dm.widthPixels;
+    }
+
+
+    public static int getScreenHeight(Context context) {
+        DisplayMetrics dm = new DisplayMetrics();
+        ((AppCompatActivity)context).getWindowManager().getDefaultDisplay().getMetrics(dm);
+        return dm.heightPixels;
+    }
 }

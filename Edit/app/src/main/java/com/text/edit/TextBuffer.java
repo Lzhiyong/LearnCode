@@ -8,168 +8,168 @@ import android.util.Log;
 
 public class TextBuffer implements Serializable {
 
-	// the text line height
-	private int lineHeight;
+    // the text line height
+    private int lineHeight;
 
-	private int lineCount;
+    private int lineCount;
 
-	private int textMaxWidth;
+    private int textMaxWidth;
 
-	// text content
-	private StringBuilder strBuffer;
+    // text content
+    private StringBuilder strBuffer;
 
-	private ArrayList<Integer> indexList;
+    private ArrayList<Integer> indexList;
 
-	private TextPaint textPaint;
+    private TextPaint textPaint;
 
-	private final String TAG = this.getClass().getSimpleName();
+    private final String TAG = this.getClass().getSimpleName();
 
-	public TextBuffer(TextPaint textPaint) {
-		this.textPaint = textPaint;
-		TextPaint.FontMetrics metrics = textPaint.getFontMetrics();
-		lineHeight = (int) (metrics.descent - metrics.ascent);
-		Log.i(TAG, "line height: " + lineHeight);
-	}
+    public TextBuffer(TextPaint textPaint) {
+        this.textPaint = textPaint;
+        TextPaint.FontMetrics metrics = textPaint.getFontMetrics();
+        lineHeight = (int) (metrics.descent - metrics.ascent);
+        Log.i(TAG, "line height: " + lineHeight);
+    }
 
-	public synchronized void setBuffer(StringBuilder strBuilder) {
-		if(strBuilder != null)
-			this.strBuffer = strBuilder;
-		else
-			this.strBuffer = new StringBuilder();
-	}
+    public synchronized void setBuffer(StringBuilder strBuilder) {
+        if(strBuilder != null)
+            this.strBuffer = strBuilder;
+        else
+            this.strBuffer = new StringBuilder();
+    }
 
 
-	public synchronized void setBuffer(String text) {
-		
-		int length = text.length();
-		for(int i=0; i<length; ++i){
-			char c = text.charAt(i);
-			if(c == '\n'){
-				++lineCount;
-				indexList.add(i);
-			}
-			strBuffer.append(c);
-		}
-	}
+    public synchronized void setBuffer(String text) {
 
-	public int getLength() {
-		return strBuffer.length() - 1;
-	}
+        int length = text.length();
+        for(int i=0; i<length; ++i) {
+            char c = text.charAt(i);
+            if(c == '\n') {
+                ++lineCount;
+                indexList.add(i);
+            }
+            strBuffer.append(c);
+        }
+    }
 
-	public char getCharAt(int index) {
-		if(index < 0 || index > getLength()) {
-			return '\0';
-		}
+    public int getLength() {
+        return strBuffer.length() - 1;
+    }
 
-		return strBuffer.charAt(index);
-	}
+    public char getCharAt(int index) {
+        if(index < 0 || index > getLength()) {
+            return '\0';
+        }
 
-	private int getCharWidth() {
-		return (int)textPaint.measureText("0");
-	}
+        return strBuffer.charAt(index);
+    }
 
-	public int getLineNumberWidth() {
-		return String.valueOf(getLineCount()).length() * getCharWidth();
-	}
+    private int getCharWidth() {
+        return (int)textPaint.measureText("0");
+    }
 
-	public void setTextMaxWidth(int textWidth) {
-		this.textMaxWidth = textWidth;
-	}
+    public int getLineNumberWidth() {
+        return String.valueOf(getLineCount()).length() * getCharWidth();
+    }
 
-	public int getTextMaxWidth() {
-		return textMaxWidth;
-	}
+    public void setTextMaxWidth(int textWidth) {
+        this.textMaxWidth = textWidth;
+    }
 
-	// Set the text line index list
-	public void setIndexList(ArrayList<Integer> indexList) {
-		if(indexList != null)
-			this.indexList = indexList;
-		else
-			this.indexList = new ArrayList<>();
+    public int getTextMaxWidth() {
+        return textMaxWidth;
+    }
 
-		if(indexList.size() == 0)
-			indexList.add(0);
-	}
+    // Set the text line index list
+    public void setIndexList(ArrayList<Integer> indexList) {
+        if(indexList != null)
+            this.indexList = indexList;
+        else
+            this.indexList = new ArrayList<>();
 
-	public int getLineStart(int line) {
-		return indexList.get(line - 1);
-	}
+        if(indexList.size() == 0)
+            indexList.add(0);
+    }
 
-	public int getLineEnd(int line) {
-		int start = getLineStart(line);
-		int length = getLine(line).length();
-		return start + length - 1;
-	}
+    public int getLineStart(int line) {
+        return indexList.get(line - 1);
+    }
 
-	public int getLineWidth(int line) {
-		return (int)textPaint.measureText(getLine(line));
-	}
+    public int getLineEnd(int line) {
+        int start = getLineStart(line);
+        int length = getLine(line).length();
+        return start + length - 1;
+    }
 
-	// Set the text line count
-	public void setLineCount(int lineCount) {
-		this.lineCount = lineCount;
-	}
+    public int getLineWidth(int line) {
+        return (int)textPaint.measureText(getLine(line));
+    }
 
-	// Get the text line count
-	public int getLineCount() {
-		return lineCount;
-	}
+    // Set the text line count
+    public void setLineCount(int lineCount) {
+        this.lineCount = lineCount;
+    }
 
-	// Get the text line height
-	public int getLineHeight() {
-		return lineHeight;
-	}
+    // Get the text line count
+    public int getLineCount() {
+        return lineCount;
+    }
 
-	// Get a line of text
-	public synchronized String getLine(int line) {
+    // Get the text line height
+    public int getLineHeight() {
+        return lineHeight;
+    }
 
-		int startIndex = getLineStart(line);
-		int endIndex = startIndex;
+    // Get a line of text
+    public synchronized String getLine(int line) {
 
-		int length = strBuffer.length();
+        int startIndex = getLineStart(line);
+        int endIndex = startIndex;
 
-		while(strBuffer.charAt(endIndex) != '\n' 
-			  && strBuffer.charAt(endIndex) != '\uFFFF') {
-			++endIndex;
-		}
+        int length = strBuffer.length();
 
-		if(endIndex >= length)
-			endIndex = length - 1;
+        while(strBuffer.charAt(endIndex) != '\n'
+                && strBuffer.charAt(endIndex) != '\uFFFF') {
+            ++endIndex;
+        }
 
-		return strBuffer.substring(startIndex, endIndex);
-	}
+        if(endIndex >= length)
+            endIndex = length - 1;
 
-	// Insert text
-	public synchronized void insert(int index, int line, char c) {
+        return strBuffer.substring(startIndex, endIndex);
+    }
 
-		if(c == '\n') {
-			++lineCount;
-			indexList.add(line, index);
-		}
+    // Insert text
+    public synchronized void insert(int index, int line, char c) {
 
-		for(int i=line; i < getLineCount(); ++i) {
-			indexList.set(i, indexList.get(i) + 1);
-		}
+        if(c == '\n') {
+            ++lineCount;
+            indexList.add(line, index);
+        }
 
-		strBuffer.insert(index, c);
-	}
+        for(int i=line; i < getLineCount(); ++i) {
+            indexList.set(i, indexList.get(i) + 1);
+        }
 
-	// Delete text
-	public synchronized void delete(int index, int line) {
+        strBuffer.insert(index, c);
+    }
 
-		if(strBuffer.charAt(index) == '\n') {
-			--lineCount;
-			indexList.remove(line);
-		} 
+    // Delete text
+    public synchronized void delete(int index, int line) {
 
-		for(int i=line; i < getLineCount(); ++i) {
-			indexList.set(i, indexList.get(i) - 1);
-		}
+        if(strBuffer.charAt(index) == '\n') {
+            --lineCount;
+            indexList.remove(line);
+        }
 
-		strBuffer.deleteCharAt(index);
-	}
+        for(int i=line; i < getLineCount(); ++i) {
+            indexList.set(i, indexList.get(i) - 1);
+        }
 
-	public synchronized void delete(int start, int end, int line) {
-		strBuffer.delete(start, end);
-	}
+        strBuffer.deleteCharAt(index);
+    }
+
+    public synchronized void delete(int start, int end, int line) {
+        strBuffer.delete(start, end);
+    }
 }

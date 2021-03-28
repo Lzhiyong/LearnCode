@@ -29,35 +29,35 @@ import java.util.TimerTask;
 public class TextView extends View implements OnScrollListener {
 
 
-	private TextPaint mTextPaint;
-	private Paint mPaint;
+    private TextPaint mTextPaint;
+    private Paint mPaint;
     private Drawable mDrawableCursorRes;
     private Drawable mSelectHandleLeft;
     private Drawable mSelectHandleRight;
-	private Drawable mSelectHandleMiddle;
+    private Drawable mSelectHandleMiddle;
 
-	private int mScrollX, mScrollY;
+    private int mScrollX, mScrollY;
 
-	private TextBuffer mTextBuffer;
+    private TextBuffer mTextBuffer;
 
-	private int screenWidth, screenHeight;
-	private int statusBarHeight;
-	private int blinkActionBarHeight;
-	private int mCursorWidth;
+    private int screenWidth, screenHeight;
+    private int statusBarHeight;
+    private int blinkActionBarHeight;
+    private int mCursorWidth;
 
-	private int mCursorPosX, mCursorPosY;
+    private int mCursorPosX, mCursorPosY;
 
-	private int mCursorLine, mCursorIndex;
+    private int mCursorLine, mCursorIndex;
 
-	private InputMethodManager imm;
+    private InputMethodManager imm;
 
     private GestureDetector mGestureDetector;
-	
-	private boolean isShowCursor = true;
-	
-	private final int MARGIN_LEFT = 100;
 
-	private final String TAG = this.getClass().getSimpleName();
+    private boolean isShowCursor = true;
+
+    private final int MARGIN_LEFT = 100;
+
+    private final String TAG = this.getClass().getSimpleName();
 
     public TextView(Context context) {
         super(context);
@@ -77,17 +77,17 @@ public class TextView extends View implements OnScrollListener {
 
     private void initView(Context context) {
 
-		screenWidth = ScreenUtils.getScreenHeight(context);
-		screenHeight = ScreenUtils.getScreenHeight(context);
-		statusBarHeight = ScreenUtils.getStatusBarHeight(context);
-		blinkActionBarHeight = ScreenUtils.getActionBarHeight(context);
+        screenWidth = ScreenUtils.getScreenHeight(context);
+        screenHeight = ScreenUtils.getScreenHeight(context);
+        statusBarHeight = ScreenUtils.getStatusBarHeight(context);
+        blinkActionBarHeight = ScreenUtils.getActionBarHeight(context);
 
-		mDrawableCursorRes = context.getDrawable(R.drawable.abc_text_cursor_material);
-		mDrawableCursorRes.setTint(Color.MAGENTA);
-		mCursorWidth = mDrawableCursorRes.getIntrinsicWidth();
-		if(mCursorWidth > 5) mCursorWidth = 5;
+        mDrawableCursorRes = context.getDrawable(R.drawable.abc_text_cursor_material);
+        mDrawableCursorRes.setTint(Color.MAGENTA);
+        mCursorWidth = mDrawableCursorRes.getIntrinsicWidth();
+        if(mCursorWidth > 5) mCursorWidth = 5;
 
-		mSelectHandleLeft = context.getDrawable(R.drawable.abc_text_select_handle_left_mtrl_dark);
+        mSelectHandleLeft = context.getDrawable(R.drawable.abc_text_select_handle_left_mtrl_dark);
         mSelectHandleLeft.setTint(Color.MAGENTA);
 
         mSelectHandleRight = context.getDrawable(R.drawable.abc_text_select_handle_right_mtrl_dark);
@@ -96,444 +96,444 @@ public class TextView extends View implements OnScrollListener {
         mSelectHandleMiddle = context.getDrawable(R.drawable.abc_text_select_handle_middle_mtrl_dark);
         mSelectHandleMiddle.setTint(Color.MAGENTA);
 
-		imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-		mGestureDetector = new GestureDetector(context, new GestureListener());
+        imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+        mGestureDetector = new GestureDetector(context, new GestureListener());
 
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
 
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-		mPaint.setColor(Color.GREEN);
-		mPaint.setStrokeWidth(10);
-		// 设置字体大小18dp
-		setTextSize(18);
+        mPaint.setColor(Color.GREEN);
+        mPaint.setStrokeWidth(10);
+        // 设置字体大小18dp
+        setTextSize(18);
 
-		mCursorIndex = 0;
-		mCursorLine = 1;
-	
-		requestFocus();
+        mCursorIndex = 0;
+        mCursorLine = 1;
+
+        requestFocus();
         setFocusable(true);
-		
-		startBlink();
+
+        startBlink();
     }
 
-	// cursor blink
-	private Runnable blinkAction = new Runnable(){
+    // cursor blink
+    private Runnable blinkAction = new Runnable() {
 
-		@Override
-		public void run() {
-			// TODO: Implement this method
-			isShowCursor = !isShowCursor;
-			postDelayed(blinkAction, 500);
-			
-			postInvalidate();
-		}
-	};
+                                       @Override
+                                       public void run() {
+                                           // TODO: Implement this method
+                                           isShowCursor = !isShowCursor;
+            postDelayed(blinkAction, 500);
 
-	public void setTextBuffer(TextBuffer textBuffer) {
-		mTextBuffer = textBuffer;
-	}
+            postInvalidate();
+        }
+    };
 
-	public void setTextSize(int dip) {
-		// dip to pixel
-		int psize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-													dip, getResources().getDisplayMetrics());
-		mTextPaint.setTextSize(psize);
-	}
+    public void setTextBuffer(TextBuffer textBuffer) {
+        mTextBuffer = textBuffer;
+    }
 
-	public void setTypeface(Typeface typeface) {
-		mTextPaint.setTypeface(typeface);
-	}
+    public void setTextSize(int dip) {
+        // dip to pixel
+        int psize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                    dip, getResources().getDisplayMetrics());
+        mTextPaint.setTextSize(psize);
+    }
 
-	public TextPaint getPaint() {
-		return mTextPaint;
-	}
+    public void setTypeface(Typeface typeface) {
+        mTextPaint.setTypeface(typeface);
+    }
 
-	private int getLineCount() {
-		return mTextBuffer.getLineCount();
-	}
+    public TextPaint getPaint() {
+        return mTextPaint;
+    }
 
-	private int getLineHeight() {
-		return mTextBuffer.getLineHeight();
-	}
+    private int getLineCount() {
+        return mTextBuffer.getLineCount();
+    }
 
-	private int getTextMaxWidth() {
-		return mTextBuffer.getTextMaxWidth();
-	}
+    private int getLineHeight() {
+        return mTextBuffer.getLineHeight();
+    }
 
-	private int getLineNumberWidth() {
-		return mTextBuffer.getLineNumberWidth();
-	}
+    private int getTextMaxWidth() {
+        return mTextBuffer.getTextMaxWidth();
+    }
 
-	private int getLineStart(int line) {
-		return mTextBuffer.getLineStart(line);
-	}
+    private int getLineNumberWidth() {
+        return mTextBuffer.getLineNumberWidth();
+    }
 
-
-	private int getLineWidth(int line) {
-		return mTextBuffer.getLineWidth(line);
-	}
-
-	public OnScrollListener getScrollListener() {
-		return this;
-	}
+    private int getLineStart(int line) {
+        return mTextBuffer.getLineStart(line);
+    }
 
 
-	@Override
-	public int getPaddingLeft() {
-		// TODO: Implement this method
-		return 10;
-	}
+    private int getLineWidth(int line) {
+        return mTextBuffer.getLineWidth(line);
+    }
 
-	@Override
-	public void onScrollX(int scrollX, int oldX) {
-		// TODO: Implement this method
-		mScrollX = scrollX;
+    public OnScrollListener getScrollListener() {
+        return this;
+    }
+
+
+    @Override
+    public int getPaddingLeft() {
+        // TODO: Implement this method
+        return 10;
+    }
+
+    @Override
+    public void onScrollX(int scrollX, int oldX) {
+        // TODO: Implement this method
+        mScrollX = scrollX;
         postInvalidate();
-	}
+    }
 
-	@Override
-	public void onScrollY(int scrollY, int oldY) {
-		// TODO: Implement this method
-		mScrollY = scrollY;
+    @Override
+    public void onScrollY(int scrollY, int oldY) {
+        // TODO: Implement this method
+        mScrollY = scrollY;
         postInvalidate();
-	}
+    }
 
 
-	@Override
+    @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
 //		int specMode = MeasureSpec.getMode(widthMeasureSpec);
 //      int width = MeasureSpec.getSize(widthMeasureSpec);
-//		
+//
 //		specMode = MeasureSpec.getMode(heightMeasureSpec);
 //      int height = MeasureSpec.getSize(heightMeasureSpec);
 
-		int width = getTextMaxWidth() + screenWidth / 4;
-		int height = getLineCount() * getLineHeight() + screenHeight / 4;
+        int width = getTextMaxWidth() + screenWidth / 4;
+        int height = getLineCount() * getLineHeight() + screenHeight / 4;
         setMeasuredDimension(width, height);
     }
 
-	public void drawLineBackground(Canvas canvas) {
+    public void drawLineBackground(Canvas canvas) {
 
-		canvas.drawRect(getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT, 
-						getPaddingTop() + mCursorPosY, 
-						getTextMaxWidth() + screenWidth / 4, 
-						mCursorPosY + getLineHeight(), 
-						mPaint
-						);
-	}
+        canvas.drawRect(getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT,
+                        getPaddingTop() + mCursorPosY,
+                        getTextMaxWidth() + screenWidth / 4,
+                        mCursorPosY + getLineHeight(),
+                        mPaint
+                       );
+    }
 
-	public void drawCursor(Canvas canvas) {
-		if(!isShowCursor) return;
-		
-		int left = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
-		int half = 0;
-		if(mCursorPosX > left) {
-			half = mCursorWidth / 2;
-		}
+    public void drawCursor(Canvas canvas) {
+        if(!isShowCursor) return;
 
-		mDrawableCursorRes.setBounds(mCursorPosX - half, 
-									 getPaddingTop() + mCursorPosY, 
-									 mCursorPosX - half + mCursorWidth, 
-									 mCursorPosY + getLineHeight()
-									 );
-		mDrawableCursorRes.draw(canvas);
+        int left = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
+        int half = 0;
+        if(mCursorPosX > left) {
+            half = mCursorWidth / 2;
+        }
 
-		//mSelectHandleMiddle.setBounds();
-	}
+        mDrawableCursorRes.setBounds(mCursorPosX - half,
+                                     getPaddingTop() + mCursorPosY,
+                                     mCursorPosX - half + mCursorWidth,
+                                     mCursorPosY + getLineHeight()
+                                    );
+        mDrawableCursorRes.draw(canvas);
 
-	// 绘制文本
-	public void drawEditableText(Canvas canvas) {
+        //mSelectHandleMiddle.setBounds();
+    }
 
-		int startLine = mScrollY / getLineHeight();
+    // 绘制文本
+    public void drawEditableText(Canvas canvas) {
 
-		int endLine = (mScrollY + screenHeight) / getLineHeight();
+        int startLine = mScrollY / getLineHeight();
 
-		if(startLine < 1) 
-			startLine = 1;
+        int endLine = (mScrollY + screenHeight) / getLineHeight();
 
-		if(endLine > getLineCount())
-			endLine = getLineCount();
+        if(startLine < 1)
+            startLine = 1;
 
-		float lineWidth = getLineNumberWidth();
+        if(endLine > getLineCount())
+            endLine = getLineCount();
 
-		for(int i=startLine; i <= endLine; ++i) {
-			float textX = getPaddingLeft();
-			// baseline
-			float textY = statusBarHeight + (i - 1) * getLineHeight() - mTextPaint.descent();
+        float lineWidth = getLineNumberWidth();
 
-			// draw line number
-			mTextPaint.setColor(Color.GRAY);
-			canvas.drawText(String.valueOf(i), textX, textY, mTextPaint);
+        for(int i=startLine; i <= endLine; ++i) {
+            float textX = getPaddingLeft();
+            // baseline
+            float textY = statusBarHeight + (i - 1) * getLineHeight() - mTextPaint.descent();
 
-			// draw vertical line
-			canvas.drawLine(lineWidth + MARGIN_LEFT / 2,  (i - 1) * getLineHeight(), lineWidth + MARGIN_LEFT / 2, i * getLineHeight(), mPaint);
+            // draw line number
+            mTextPaint.setColor(Color.GRAY);
+            canvas.drawText(String.valueOf(i), textX, textY, mTextPaint);
 
-			// draw content text
-			textX += (lineWidth + MARGIN_LEFT);
-			mTextPaint.setColor(Color.BLACK);
-			canvas.drawText(mTextBuffer.getLine(i), textX, textY, mTextPaint);
-		}
-	}
+            // draw vertical line
+            canvas.drawLine(lineWidth + MARGIN_LEFT / 2,  (i - 1) * getLineHeight(), lineWidth + MARGIN_LEFT / 2, i * getLineHeight(), mPaint);
 
-	@Override
-	protected void onDraw(Canvas canvas) {
-		// TODO: Implement this method
-		super.onDraw(canvas);
+            // draw content text
+            textX += (lineWidth + MARGIN_LEFT);
+            mTextPaint.setColor(Color.BLACK);
+            canvas.drawText(mTextBuffer.getLine(i), textX, textY, mTextPaint);
+        }
+    }
 
-		//绘制背景
+    @Override
+    protected void onDraw(Canvas canvas) {
+        // TODO: Implement this method
+        super.onDraw(canvas);
+
+        //绘制背景
         Drawable background = getBackground();
         if(background != null) {
             background.draw(canvas);
         }
 
-		drawLineBackground(canvas);
-		// 绘制文本
-	    drawEditableText(canvas);
+        drawLineBackground(canvas);
+        // 绘制文本
+        drawEditableText(canvas);
 
-		drawCursor(canvas);
-	}
+        drawCursor(canvas);
+    }
 
-	public void startBlink() {
-		// TODO: Implement this method
-		postDelayed(blinkAction, 1000);
-	}
-	
-	
-	public void stopBlink(){
-		removeCallbacks(blinkAction);
-		isShowCursor = true;
-	}
-	
-	
-	@Override
-	public void onWindowFocusChanged(boolean hasWindowFocus) {
-		// TODO: Implement this method
-		super.onWindowFocusChanged(hasWindowFocus);
-	}
-	
-	
-	@Override
-	public boolean onTouchEvent(MotionEvent event) {
-		// TODO: Implement this method
-		mGestureDetector.onTouchEvent(event);
-		return true;
-	}
-
-	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		// TODO: Implement this method
-		if(event.getAction() == KeyEvent.ACTION_DOWN) {
-			switch(keyCode) {
-			case KeyEvent.KEYCODE_ENTER:
-				insert('\n');
-				break;
-			case KeyEvent.KEYCODE_DEL:		
-				// delete text
-				delete();
-				break;
-			}
-		}
-		return super.onKeyDown(keyCode, event);
-	}
-
-	// Insert char
-	public void insert(char c) {
-		stopBlink();
-		
-		mTextBuffer.insert(mCursorIndex, mCursorLine, c);
-		
-		++mCursorIndex;
-
-		if(c == '\n') {
-			mCursorPosX = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
-			mCursorPosY += getLineHeight();
-			++mCursorLine;
-		} else {
-			adjustCursorPositionX();
-		}
-
-		postInvalidate();
-		startBlink();
-	}
-
-	// Insert text
-	public void insert(String text) {
-		int length = text.length();
-
-		for(int i=0; i < length; ++i) {
-			insert(text.charAt(i));
-		}
-	}
-
-	// delete text
-	public void delete() {
-		stopBlink();
-		--mCursorIndex;
-
-		// cursor x at first position
-		if(mCursorIndex < 0) {
-			mCursorIndex = 0;
-			return;	// no need to delete
-		}
-
-		// get delete char
-		char c = mTextBuffer.getCharAt(mCursorIndex);
-
-		if(c == '\n') {
-			mCursorPosX += getLineWidth(mCursorLine - 1);
-			mCursorPosY -= getLineHeight();
-			--mCursorLine;
-		} else {
-			adjustCursorPositionX();
-		}
-
-		mTextBuffer.delete(mCursorIndex, mCursorLine);
-		postInvalidate();
-		startBlink();
-	}
-
-	private void adjustCursorPositionX() {
-		int left = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
-		int startIndex = getLineStart(mCursorLine);
-
-		String text = mTextBuffer.getLine(mCursorLine).substring(0, mCursorIndex - startIndex);
-		mCursorPosX = left + (int)mTextPaint.measureText(text);
-	}
-
-	private void adjustCursorPositionY() {
-		if(mCursorPosY < getPaddingTop())
-			mCursorPosY = getPaddingTop();
-	}
-
-	public void setCursorPosition(float x, float y) {
-		mCursorPosX = (int) x;
-		mCursorPosY = (int) y;
-
-		adjustCursorPositionX();
-		adjustCursorPositionY();
-	}
+    public void startBlink() {
+        // TODO: Implement this method
+        postDelayed(blinkAction, 1000);
+    }
 
 
-	public void showSoftInput(boolean show) {
-		if(show)
-			imm.showSoftInput(this, InputMethodManager.SHOW_FORCED);
-		else 
-			imm.hideSoftInputFromWindow(getWindowToken(), 0);
-	}
+    public void stopBlink() {
+        removeCallbacks(blinkAction);
+        isShowCursor = true;
+    }
 
 
-	@Override
-	public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
-		// TODO: Implement this method
-		outAttrs.inputType = InputType.TYPE_NULL;
-		outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN;
-		outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI; 
-
-		return new TextInputConnection(this, true);
-	}
+    @Override
+    public void onWindowFocusChanged(boolean hasWindowFocus) {
+        // TODO: Implement this method
+        super.onWindowFocusChanged(hasWindowFocus);
+    }
 
 
-	class GestureListener extends GestureDetector.SimpleOnGestureListener {
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        // TODO: Implement this method
+        mGestureDetector.onTouchEvent(event);
+        return true;
+    }
 
-		@Override
-		public boolean onSingleTapUp(MotionEvent e) {
-			// TODO: Implement this method
-			showSoftInput(true);
-			stopBlink();
-			// calculation cursor y
-			mCursorPosY = (int)e.getY() / getLineHeight() * getLineHeight();
-			int bottom = getLineCount() * getLineHeight();	
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // TODO: Implement this method
+        if(event.getAction() == KeyEvent.ACTION_DOWN) {
+            switch(keyCode) {
+            case KeyEvent.KEYCODE_ENTER:
+                insert('\n');
+                break;
+            case KeyEvent.KEYCODE_DEL:
+                // delete text
+                delete();
+                break;
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
 
-			if(mCursorPosY < getPaddingTop())
-				mCursorPosY = getPaddingTop();
+    // Insert char
+    public void insert(char c) {
+        stopBlink();
 
-			if(mCursorPosY > bottom - getLineHeight())
-				mCursorPosY = bottom - getLineHeight();
+        mTextBuffer.insert(mCursorIndex, mCursorLine, c);
 
-			// calculation cursor x
-			int left = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
+        ++mCursorIndex;
 
-			int prev = left;
-			int next = left;
+        if(c == '\n') {
+            mCursorPosX = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
+            mCursorPosY += getLineHeight();
+            ++mCursorLine;
+        } else {
+            adjustCursorPositionX();
+        }
 
-			mCursorLine = mCursorPosY / getLineHeight() + 1;
-			mCursorIndex = getLineStart(mCursorLine);
+        postInvalidate();
+        startBlink();
+    }
 
-			String text = mTextBuffer.getLine(mCursorLine);
-			int length = text.length();
+    // Insert text
+    public void insert(String text) {
+        int length = text.length();
 
-			float[] widths = new float[length];
-			mTextPaint.getTextWidths(text, widths);
+        for(int i=0; i < length; ++i) {
+            insert(text.charAt(i));
+        }
+    }
 
-			for(int i=0; next < e.getX() && i < length; ++i) {
-				if(i > 0) {
-					prev += widths[i - 1];
-				}
-				next += widths[i];
-			}
+    // delete text
+    public void delete() {
+        stopBlink();
+        --mCursorIndex;
 
-			if(Math.abs(e.getX() - prev) <= Math.abs(next - e.getX())) {
-				mCursorPosX = prev;
-			} else {
-				mCursorPosX = next;
-			}
+        // cursor x at first position
+        if(mCursorIndex < 0) {
+            mCursorIndex = 0;
+            return;	// no need to delete
+        }
 
-			// calculation cursor index
-			if(mCursorPosX > left) {
-				for(int j=0; left < mCursorPosX && j < length; ++j) {
-					left += widths[j];
-					++mCursorIndex;
-				}
-			}
+        // get delete char
+        char c = mTextBuffer.getCharAt(mCursorIndex);
 
-			Log.i(TAG, "mCursorIndex: " + mCursorIndex);
-			
-			postInvalidate();
-			startBlink();
-			return super.onSingleTapUp(e);
-		}
+        if(c == '\n') {
+            mCursorPosX += getLineWidth(mCursorLine - 1);
+            mCursorPosY -= getLineHeight();
+            --mCursorLine;
+        } else {
+            adjustCursorPositionX();
+        }
 
+        mTextBuffer.delete(mCursorIndex, mCursorLine);
+        postInvalidate();
+        startBlink();
+    }
 
-		@Override
-		public void onLongPress(MotionEvent e) {
-			// TODO: Implement this method
-			super.onLongPress(e);
-		}
-	}
+    private void adjustCursorPositionX() {
+        int left = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
+        int startIndex = getLineStart(mCursorLine);
 
+        String text = mTextBuffer.getLine(mCursorLine).substring(0, mCursorIndex - startIndex);
+        mCursorPosX = left + (int)mTextPaint.measureText(text);
+    }
 
-	class TextInputConnection extends BaseInputConnection {
+    private void adjustCursorPositionY() {
+        if(mCursorPosY < getPaddingTop())
+            mCursorPosY = getPaddingTop();
+    }
 
-		public TextInputConnection(View view, boolean fullEditor) {
-			super(view, fullEditor);
-		}
+    public void setCursorPosition(float x, float y) {
+        mCursorPosX = (int) x;
+        mCursorPosY = (int) y;
 
-		@Override
-		public boolean commitText(CharSequence text, int newCursorPosition) {
-			// TODO: Implement this method
-			insert(text.toString());
-			return true;
-		}
-
-		@Override
-		public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-			// TODO: Implement this method
-			return super.deleteSurroundingText(beforeLength, afterLength);
-		}
-
-		@Override
-		public boolean sendKeyEvent(KeyEvent event) {
-			// TODO: Implement this method
-			return onKeyDown(event.getKeyCode(), event);
-		}
+        adjustCursorPositionX();
+        adjustCursorPositionY();
+    }
 
 
-		@Override
-		public boolean finishComposingText() {
-			// TODO: Implement this method
-			return true;
-		}
-	}
+    public void showSoftInput(boolean show) {
+        if(show)
+            imm.showSoftInput(this, InputMethodManager.SHOW_FORCED);
+        else
+            imm.hideSoftInputFromWindow(getWindowToken(), 0);
+    }
+
+
+    @Override
+    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+        // TODO: Implement this method
+        outAttrs.inputType = InputType.TYPE_NULL;
+        outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN;
+        outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI;
+
+        return new TextInputConnection(this, true);
+    }
+
+
+    class GestureListener extends GestureDetector.SimpleOnGestureListener {
+
+        @Override
+        public boolean onSingleTapUp(MotionEvent e) {
+            // TODO: Implement this method
+            showSoftInput(true);
+            stopBlink();
+            // calculation cursor y
+            mCursorPosY = (int)e.getY() / getLineHeight() * getLineHeight();
+            int bottom = getLineCount() * getLineHeight();
+
+            if(mCursorPosY < getPaddingTop())
+                mCursorPosY = getPaddingTop();
+
+            if(mCursorPosY > bottom - getLineHeight())
+                mCursorPosY = bottom - getLineHeight();
+
+            // calculation cursor x
+            int left = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
+
+            int prev = left;
+            int next = left;
+
+            mCursorLine = mCursorPosY / getLineHeight() + 1;
+            mCursorIndex = getLineStart(mCursorLine);
+
+            String text = mTextBuffer.getLine(mCursorLine);
+            int length = text.length();
+
+            float[] widths = new float[length];
+            mTextPaint.getTextWidths(text, widths);
+
+            for(int i=0; next < e.getX() && i < length; ++i) {
+                if(i > 0) {
+                    prev += widths[i - 1];
+                }
+                next += widths[i];
+            }
+
+            if(Math.abs(e.getX() - prev) <= Math.abs(next - e.getX())) {
+                mCursorPosX = prev;
+            } else {
+                mCursorPosX = next;
+            }
+
+            // calculation cursor index
+            if(mCursorPosX > left) {
+                for(int j=0; left < mCursorPosX && j < length; ++j) {
+                    left += widths[j];
+                    ++mCursorIndex;
+                }
+            }
+
+            Log.i(TAG, "mCursorIndex: " + mCursorIndex);
+
+            postInvalidate();
+            startBlink();
+            return super.onSingleTapUp(e);
+        }
+
+
+        @Override
+        public void onLongPress(MotionEvent e) {
+            // TODO: Implement this method
+            super.onLongPress(e);
+        }
+    }
+
+
+    class TextInputConnection extends BaseInputConnection {
+
+        public TextInputConnection(View view, boolean fullEditor) {
+            super(view, fullEditor);
+        }
+
+        @Override
+        public boolean commitText(CharSequence text, int newCursorPosition) {
+            // TODO: Implement this method
+            insert(text.toString());
+            return true;
+        }
+
+        @Override
+        public boolean deleteSurroundingText(int beforeLength, int afterLength) {
+            // TODO: Implement this method
+            return super.deleteSurroundingText(beforeLength, afterLength);
+        }
+
+        @Override
+        public boolean sendKeyEvent(KeyEvent event) {
+            // TODO: Implement this method
+            return onKeyDown(event.getKeyCode(), event);
+        }
+
+
+        @Override
+        public boolean finishComposingText() {
+            // TODO: Implement this method
+            return true;
+        }
+    }
 }

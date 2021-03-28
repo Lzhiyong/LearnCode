@@ -20,15 +20,15 @@ public class TextHorizontalScrollView extends HorizontalScrollView {
 
     }
 
-    public void setScrollListener(OnScrollListener listener){
+    public void setScrollListener(OnScrollListener listener) {
         mScrollListener = listener;
     }
 
     @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
-		// TODO: Implement this method
+        // TODO: Implement this method
         super.onScrollChanged(l, t, oldl, oldt);
-        if(mScrollListener != null){
+        if(mScrollListener != null) {
             mScrollListener.onScrollX(l, oldl);
         }
     }
