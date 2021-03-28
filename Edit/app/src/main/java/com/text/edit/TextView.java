@@ -28,26 +28,24 @@ import java.util.TimerTask;
 
 public class TextView extends View implements OnScrollListener {
 
-
+	private Paint mPaint;
     private TextPaint mTextPaint;
-    private Paint mPaint;
+	
     private Drawable mDrawableCursorRes;
     private Drawable mSelectHandleLeft;
     private Drawable mSelectHandleRight;
     private Drawable mSelectHandleMiddle;
 
     private int mScrollX, mScrollY;
-
-    private TextBuffer mTextBuffer;
-
-    private int screenWidth, screenHeight;
+	private int mCursorPosX, mCursorPosY;
+    private int mCursorLine, mCursorIndex;
+	
+    private int mCursorWidth;
     private int statusBarHeight;
     private int blinkActionBarHeight;
-    private int mCursorWidth;
+	private int screenWidth, screenHeight;
 
-    private int mCursorPosX, mCursorPosY;
-
-    private int mCursorLine, mCursorIndex;
+    private TextBuffer mTextBuffer;
 
     private InputMethodManager imm;
 
@@ -59,6 +57,7 @@ public class TextView extends View implements OnScrollListener {
 
     private final String TAG = this.getClass().getSimpleName();
 
+	
     public TextView(Context context) {
         super(context);
         initView(context);
