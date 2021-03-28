@@ -105,8 +105,3 @@ extern struct rb_node *rb_next(const struct rb_node *); //后继
 mkdir build && cd build && cmake ..
 
 gcc -o main rbtree.c main.c
-
-
-
-
-

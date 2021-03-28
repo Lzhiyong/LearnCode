@@ -374,6 +374,7 @@ public class TextView extends View implements OnScrollListener {
         // cursor x at first position
         if(mCursorIndex < 0) {
             mCursorIndex = 0;
+            startBlink();
             return;	// no need to delete
         }
 

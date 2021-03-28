@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.14.2)
 project(smart-pointer)
 
 set (CMAKE_C_COMPILER "/usr/bin/clang")
