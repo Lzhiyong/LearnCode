@@ -104,7 +104,7 @@ public class TextView extends View implements OnScrollListener {
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaint.setColor(Color.GREEN);
         mPaint.setStrokeWidth(10);
-        // 设置字体大小18dp
+        // set text size 18dp
         setTextSize(18);
 
         mCursorIndex = 0;
