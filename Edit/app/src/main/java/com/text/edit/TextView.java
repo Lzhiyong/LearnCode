@@ -202,11 +202,11 @@ public class TextView extends View implements OnScrollListener {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-//		int specMode = MeasureSpec.getMode(widthMeasureSpec);
-//      int width = MeasureSpec.getSize(widthMeasureSpec);
+//        int specMode = MeasureSpec.getMode(widthMeasureSpec);
+//        int width = MeasureSpec.getSize(widthMeasureSpec);
 //
-//		specMode = MeasureSpec.getMode(heightMeasureSpec);
-//      int height = MeasureSpec.getSize(heightMeasureSpec);
+//        specMode = MeasureSpec.getMode(heightMeasureSpec);
+//        int height = MeasureSpec.getSize(heightMeasureSpec);
 
         int width = getTextMaxWidth() + screenWidth / 4;
         int height = getLineCount() * getLineHeight() + screenHeight / 4;
