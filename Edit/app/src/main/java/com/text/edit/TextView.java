@@ -119,10 +119,10 @@ public class TextView extends View implements OnScrollListener {
     // cursor blink
     private Runnable blinkAction = new Runnable() {
 
-                                       @Override
-                                       public void run() {
-                                           // TODO: Implement this method
-                                           isShowCursor = !isShowCursor;
+        @Override
+        public void run() {
+            // TODO: Implement this method
+            isShowCursor = !isShowCursor;
             postDelayed(blinkAction, 500);
 
             postInvalidate();
