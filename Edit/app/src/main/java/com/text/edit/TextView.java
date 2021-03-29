@@ -51,11 +51,10 @@ public class TextView extends View implements OnScrollListener {
     private InputMethodManager imm;
 
     private GestureDetector mGestureDetector;
-    
-    // single tap time
-    private long lastTapTime = 0L;
+    private GestureListener mGestureListener;
+
     private boolean showCursor = true;
-    private boolean showWater = false;
+    private boolean showWaterDrop = false;
 
     private final int MARGIN_LEFT = 100;
 
@@ -88,11 +87,17 @@ public class TextView extends View implements OnScrollListener {
         mDrawableCursorRes = context.getDrawable(R.drawable.abc_text_cursor_material);
         mDrawableCursorRes.setTint(Color.MAGENTA);
         mCursorWidth = mDrawableCursorRes.getIntrinsicWidth();
-        if(mCursorWidth > 5) mCursorWidth = 5;
+        if(mCursorWidth > 5) {
+            // set cursor width
+            mCursorWidth = 5;
+        }
 
+        // left water
         mSelectHandleLeft = context.getDrawable(R.drawable.abc_text_select_handle_left_mtrl_dark);
         mSelectHandleLeft.setTint(Color.MAGENTA);
         Log.i(TAG, "left width: " + mSelectHandleLeft.getIntrinsicWidth());
+
+        // right water
         mSelectHandleRight = context.getDrawable(R.drawable.abc_text_select_handle_right_mtrl_dark);
         mSelectHandleRight.setTint(Color.MAGENTA);
 
@@ -103,7 +108,8 @@ public class TextView extends View implements OnScrollListener {
         waterHeight = mSelectHandleMiddle.getIntrinsicHeight();
 
         imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-        mGestureDetector = new GestureDetector(context, new GestureListener());
+        mGestureListener = new GestureListener();
+        mGestureDetector = new GestureDetector(context, mGestureListener);
 
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
 
@@ -122,6 +128,7 @@ public class TextView extends View implements OnScrollListener {
         startBlink();
     }
 
+
     // cursor blink
     private Runnable blinkAction = new Runnable() {
 
@@ -130,28 +137,40 @@ public class TextView extends View implements OnScrollListener {
             // TODO: Implement this method
             showCursor = !showCursor;
             postDelayed(blinkAction, 500);
-            
-            // not show water
-            if(System.currentTimeMillis() - lastTapTime >= 3000){
-                showWater = false;
-            }
-            
+
             postInvalidate();
         }
     };
-    
+
+    // water drop
+    private Runnable waterDropAction = new Runnable(){
+
+        @Override
+        public void run() {
+            // TODO: Implement this method
+            showWaterDrop = false;
+        }
+    };
+
     public void startBlink() {
         // TODO: Implement this method
         postDelayed(blinkAction, 1000);
     }
 
 
-    public void stopBlink() {
+    public void stopBlink(boolean show) {
         removeCallbacks(blinkAction);
         // show cursor
-        showCursor = true;
-        // not show water
-        showWater = false;
+        showCursor = show;
+    }
+
+    public void showWaterDrop(boolean show) {
+        removeCallbacks(waterDropAction);
+        showWaterDrop = show;
+    }
+
+    public void hideWaterDrop() {
+        postDelayed(waterDropAction, 3000);
     }
 
     public void setTextBuffer(TextBuffer textBuffer) {
@@ -202,6 +221,9 @@ public class TextView extends View implements OnScrollListener {
         return this;
     }
 
+    public GestureDetector getGestureDetector() {
+        return mGestureDetector;
+    }
 
     @Override
     public int getPaddingLeft() {
@@ -268,7 +290,7 @@ public class TextView extends View implements OnScrollListener {
             mDrawableCursorRes.draw(canvas);
         }
 
-        if(showWater) {
+        if(showWaterDrop) {
             // draw select text water res
             mSelectHandleMiddle.setBounds(mCursorPosX - waterWidth / 2,
                                           mCursorPosY + getLineHeight(),
@@ -331,7 +353,7 @@ public class TextView extends View implements OnScrollListener {
         drawCursor(canvas);
     }
 
-    
+
     @Override
     public void onWindowFocusChanged(boolean hasWindowFocus) {
         // TODO: Implement this method
@@ -342,9 +364,22 @@ public class TextView extends View implements OnScrollListener {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         // TODO: Implement this method
+
+        switch(event.getAction()) {
+        case MotionEvent.ACTION_DOWN:
+        case MotionEvent.ACTION_MOVE:
+            getParent().requestDisallowInterceptTouchEvent(true);
+            break;
+        case MotionEvent.ACTION_UP:
+            //getParent().requestDisallowInterceptTouchEvent(false);
+            mGestureListener.onUp(event);
+            break;
+        }
+
         mGestureDetector.onTouchEvent(event);
         return true;
     }
+
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -365,7 +400,8 @@ public class TextView extends View implements OnScrollListener {
 
     // Insert char
     public void insert(char c) {
-        stopBlink();
+        stopBlink(true);
+        showWaterDrop(false);
 
         mTextBuffer.insert(mCursorIndex, mCursorLine, c);
 
@@ -394,7 +430,8 @@ public class TextView extends View implements OnScrollListener {
 
     // delete text
     public void delete() {
-        stopBlink();
+        stopBlink(true);
+        showWaterDrop(false);
         --mCursorIndex;
 
         // cursor x at first position
@@ -428,17 +465,58 @@ public class TextView extends View implements OnScrollListener {
         mCursorPosX = left + (int)mTextPaint.measureText(text);
     }
 
-    private void adjustCursorPositionY() {
+//    private void adjustCursorPositionY() {
+//        if(mCursorPosY < getPaddingTop())
+//            mCursorPosY = getPaddingTop();
+//    }
+
+    // set cursor position
+    public void setCursorPosition(float x, float y) {
+        // calculation cursor y
+        mCursorPosY = (int)y / getLineHeight() * getLineHeight();
+        int bottom = getLineCount() * getLineHeight();
+
         if(mCursorPosY < getPaddingTop())
             mCursorPosY = getPaddingTop();
-    }
 
-    public void setCursorPosition(float x, float y) {
-        mCursorPosX = (int) x;
-        mCursorPosY = (int) y;
+        if(mCursorPosY > bottom - getLineHeight())
+            mCursorPosY = bottom - getLineHeight();
 
-        adjustCursorPositionX();
-        adjustCursorPositionY();
+        // calculation cursor x
+        int left = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
+
+        int prev = left;
+        int next = left;
+
+        mCursorLine = mCursorPosY / getLineHeight() + 1;
+        mCursorIndex = getLineStart(mCursorLine);
+
+        String text = mTextBuffer.getLine(mCursorLine);
+        int length = text.length();
+
+        float[] widths = new float[length];
+        mTextPaint.getTextWidths(text, widths);
+
+        for(int i=0; next < x && i < length; ++i) {
+            if(i > 0) {
+                prev += widths[i - 1];
+            }
+            next += widths[i];
+        }
+
+        if(Math.abs(x - prev) <= Math.abs(next - x)) {
+            mCursorPosX = prev;
+        } else {
+            mCursorPosX = next;
+        }
+
+        // calculation cursor index
+        if(mCursorPosX > left) {
+            for(int j=0; left < mCursorPosX && j < length; ++j) {
+                left += widths[j];
+                ++mCursorIndex;
+            }
+        }
     }
 
 
@@ -463,67 +541,60 @@ public class TextView extends View implements OnScrollListener {
 
     class GestureListener extends GestureDetector.SimpleOnGestureListener {
 
+        private boolean isHandleMiddleTouched = false;
+        private boolean isHandleLeftTouched = false;
+        private boolean isHandleRightTouched = false;
+
+
+        @Override
+        public boolean onDown(MotionEvent e) {
+            // TODO: Implement this method
+            float x = e.getX();
+            float y = e.getY();
+      
+            // middle water
+            if(showWaterDrop && x >= mCursorPosX - waterWidth / 2 && x <= mCursorPosX + waterWidth / 2
+               && y >= mCursorPosY + getLineHeight() && y <= mCursorPosY + getLineHeight() + waterHeight) {
+                isHandleMiddleTouched = true;
+                stopBlink(true);
+                showWaterDrop(true);
+            }
+            
+            return super.onDown(e);
+        }
+
+
         @Override
         public boolean onSingleTapUp(MotionEvent e) {
             // TODO: Implement this method
             showSoftInput(true);
-            stopBlink();
-            // calculation cursor y
-            mCursorPosY = (int)e.getY() / getLineHeight() * getLineHeight();
-            int bottom = getLineCount() * getLineHeight();
+            // stop cursor blink
+            stopBlink(true);
+            // show water drop
+            showWaterDrop(true);
 
-            if(mCursorPosY < getPaddingTop())
-                mCursorPosY = getPaddingTop();
-
-            if(mCursorPosY > bottom - getLineHeight())
-                mCursorPosY = bottom - getLineHeight();
-
-            // calculation cursor x
-            int left = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
-
-            int prev = left;
-            int next = left;
-
-            mCursorLine = mCursorPosY / getLineHeight() + 1;
-            mCursorIndex = getLineStart(mCursorLine);
-
-            String text = mTextBuffer.getLine(mCursorLine);
-            int length = text.length();
-
-            float[] widths = new float[length];
-            mTextPaint.getTextWidths(text, widths);
-
-            for(int i=0; next < e.getX() && i < length; ++i) {
-                if(i > 0) {
-                    prev += widths[i - 1];
-                }
-                next += widths[i];
-            }
-
-            if(Math.abs(e.getX() - prev) <= Math.abs(next - e.getX())) {
-                mCursorPosX = prev;
-            } else {
-                mCursorPosX = next;
-            }
-
-            // calculation cursor index
-            if(mCursorPosX > left) {
-                for(int j=0; left < mCursorPosX && j < length; ++j) {
-                    left += widths[j];
-                    ++mCursorIndex;
-                }
-            }
-
+            setCursorPosition(e.getX(), e.getY());
             //Log.i(TAG, "mCursorIndex: " + mCursorIndex);
-
             postInvalidate();
-            
-            // show water
-            showWater = true;
-            lastTapTime = System.currentTimeMillis();
+            // cursor start blink
             startBlink();
-            
+            // hide water drop
+            hideWaterDrop();
+
             return super.onSingleTapUp(e);
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            
+            if(isHandleMiddleTouched) {
+                setCursorPosition(e2.getX(), e2.getY() - getLineHeight() - waterHeight);
+            } else {
+                onUp(e2);
+            }
+                  
+            postInvalidate();
+            return super.onScroll(e1, e2, distanceX, distanceY);
         }
 
 
@@ -531,6 +602,17 @@ public class TextView extends View implements OnScrollListener {
         public void onLongPress(MotionEvent e) {
             // TODO: Implement this method
             super.onLongPress(e);
+        }
+
+
+        public void onUp(MotionEvent e) {
+            TextView.this.getParent().requestDisallowInterceptTouchEvent(false);
+            
+            if(isHandleMiddleTouched) {
+                isHandleMiddleTouched = false;
+                startBlink();
+                hideWaterDrop();
+            }
         }
     }
 

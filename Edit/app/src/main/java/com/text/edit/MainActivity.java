@@ -24,6 +24,8 @@ import android.text.SpannedString;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.graphics.Typeface;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -73,7 +75,6 @@ public class MainActivity extends AppCompatActivity {
         // TODO: Implement this method
         super.onWindowFocusChanged(hasFocus);
     }
-
 
     public boolean hasPermission(String permission) {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
