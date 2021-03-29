@@ -41,8 +41,9 @@ public class TextView extends View implements OnScrollListener {
     private int mCursorLine, mCursorIndex;
 
     private int mCursorWidth;
+    private int waterWidth, waterHeight;
     private int statusBarHeight;
-    private int blinkActionBarHeight;
+    private int actionBarHeight;
     private int screenWidth, screenHeight;
 
     private TextBuffer mTextBuffer;
@@ -50,8 +51,11 @@ public class TextView extends View implements OnScrollListener {
     private InputMethodManager imm;
 
     private GestureDetector mGestureDetector;
-
-    private boolean isShowCursor = true;
+    
+    // single tap time
+    private long lastTapTime = 0L;
+    private boolean showCursor = true;
+    private boolean showWater = false;
 
     private final int MARGIN_LEFT = 100;
 
@@ -79,7 +83,7 @@ public class TextView extends View implements OnScrollListener {
         screenWidth = ScreenUtils.getScreenHeight(context);
         screenHeight = ScreenUtils.getScreenHeight(context);
         statusBarHeight = ScreenUtils.getStatusBarHeight(context);
-        blinkActionBarHeight = ScreenUtils.getActionBarHeight(context);
+        actionBarHeight = ScreenUtils.getActionBarHeight(context);
 
         mDrawableCursorRes = context.getDrawable(R.drawable.abc_text_cursor_material);
         mDrawableCursorRes.setTint(Color.MAGENTA);
@@ -88,12 +92,15 @@ public class TextView extends View implements OnScrollListener {
 
         mSelectHandleLeft = context.getDrawable(R.drawable.abc_text_select_handle_left_mtrl_dark);
         mSelectHandleLeft.setTint(Color.MAGENTA);
-
+        Log.i(TAG, "left width: " + mSelectHandleLeft.getIntrinsicWidth());
         mSelectHandleRight = context.getDrawable(R.drawable.abc_text_select_handle_right_mtrl_dark);
         mSelectHandleRight.setTint(Color.MAGENTA);
 
+        // middle water
         mSelectHandleMiddle = context.getDrawable(R.drawable.abc_text_select_handle_middle_mtrl_dark);
         mSelectHandleMiddle.setTint(Color.MAGENTA);
+        waterWidth = mSelectHandleMiddle.getIntrinsicWidth();
+        waterHeight = mSelectHandleMiddle.getIntrinsicHeight();
 
         imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
         mGestureDetector = new GestureDetector(context, new GestureListener());
@@ -121,12 +128,31 @@ public class TextView extends View implements OnScrollListener {
         @Override
         public void run() {
             // TODO: Implement this method
-            isShowCursor = !isShowCursor;
+            showCursor = !showCursor;
             postDelayed(blinkAction, 500);
-
+            
+            // not show water
+            if(System.currentTimeMillis() - lastTapTime >= 3000){
+                showWater = false;
+            }
+            
             postInvalidate();
         }
     };
+    
+    public void startBlink() {
+        // TODO: Implement this method
+        postDelayed(blinkAction, 1000);
+    }
+
+
+    public void stopBlink() {
+        removeCallbacks(blinkAction);
+        // show cursor
+        showCursor = true;
+        // not show water
+        showWater = false;
+    }
 
     public void setTextBuffer(TextBuffer textBuffer) {
         mTextBuffer = textBuffer;
@@ -135,7 +161,7 @@ public class TextView extends View implements OnScrollListener {
     public void setTextSize(int dip) {
         // dip to pixel
         int psize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                    dip, getResources().getDisplayMetrics());
+                                                    dip, getResources().getDisplayMetrics());
         mTextPaint.setTextSize(psize);
     }
 
@@ -220,29 +246,40 @@ public class TextView extends View implements OnScrollListener {
                         getTextMaxWidth() + screenWidth / 4,
                         mCursorPosY + getLineHeight(),
                         mPaint
-                       );
+                        );
     }
 
+    // draw cursor
     public void drawCursor(Canvas canvas) {
-        if(!isShowCursor) return;
+        if(showCursor) {
 
-        int left = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
-        int half = 0;
-        if(mCursorPosX > left) {
-            half = mCursorWidth / 2;
+            int left = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
+            int half = 0;
+            if(mCursorPosX > left) {
+                half = mCursorWidth / 2;
+            }
+
+            // draw cursor res
+            mDrawableCursorRes.setBounds(mCursorPosX - half,
+                                         getPaddingTop() + mCursorPosY,
+                                         mCursorPosX - half + mCursorWidth,
+                                         mCursorPosY + getLineHeight()
+                                         );
+            mDrawableCursorRes.draw(canvas);
         }
 
-        mDrawableCursorRes.setBounds(mCursorPosX - half,
-                                     getPaddingTop() + mCursorPosY,
-                                     mCursorPosX - half + mCursorWidth,
-                                     mCursorPosY + getLineHeight()
-                                    );
-        mDrawableCursorRes.draw(canvas);
-
-        //mSelectHandleMiddle.setBounds();
+        if(showWater) {
+            // draw select text water res
+            mSelectHandleMiddle.setBounds(mCursorPosX - waterWidth / 2,
+                                          mCursorPosY + getLineHeight(),
+                                          mCursorPosX + waterWidth / 2,
+                                          mCursorPosY + getLineHeight() + waterHeight
+                                          );
+            mSelectHandleMiddle.draw(canvas);
+        }
     }
 
-    // 绘制文本
+    // draw content text
     public void drawEditableText(Canvas canvas) {
 
         int startLine = mScrollY / getLineHeight();
@@ -281,31 +318,20 @@ public class TextView extends View implements OnScrollListener {
         // TODO: Implement this method
         super.onDraw(canvas);
 
-        //绘制背景
+        // draw background
         Drawable background = getBackground();
         if(background != null) {
             background.draw(canvas);
         }
 
         drawLineBackground(canvas);
-        // 绘制文本
+        // draw content text
         drawEditableText(canvas);
 
         drawCursor(canvas);
     }
 
-    public void startBlink() {
-        // TODO: Implement this method
-        postDelayed(blinkAction, 1000);
-    }
-
-
-    public void stopBlink() {
-        removeCallbacks(blinkAction);
-        isShowCursor = true;
-    }
-
-
+    
     @Override
     public void onWindowFocusChanged(boolean hasWindowFocus) {
         // TODO: Implement this method
@@ -488,10 +514,15 @@ public class TextView extends View implements OnScrollListener {
                 }
             }
 
-            Log.i(TAG, "mCursorIndex: " + mCursorIndex);
+            //Log.i(TAG, "mCursorIndex: " + mCursorIndex);
 
             postInvalidate();
+            
+            // show water
+            showWater = true;
+            lastTapTime = System.currentTimeMillis();
             startBlink();
+            
             return super.onSingleTapUp(e);
         }
 
