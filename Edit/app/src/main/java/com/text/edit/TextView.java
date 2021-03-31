@@ -24,6 +24,9 @@ import android.view.KeyEvent;
 import android.graphics.Typeface;
 import java.util.Timer;
 import java.util.TimerTask;
+import android.graphics.Path;
+import android.graphics.PorterDuff;
+import androidx.core.graphics.drawable.DrawableCompat;
 
 
 public class TextView extends View implements OnScrollListener {
@@ -32,19 +35,23 @@ public class TextView extends View implements OnScrollListener {
     private TextPaint mTextPaint;
 
     private Drawable mDrawableCursorRes;
-    private Drawable mSelectHandleLeft;
-    private Drawable mSelectHandleRight;
-    private Drawable mSelectHandleMiddle;
+    private Drawable mTextSelectHandleLeftRes;
+    private Drawable mTextSelectHandleRightRes;
+    private Drawable mTextSelectHandleMiddleRes;
 
     private int mScrollX, mScrollY;
     private int mCursorPosX, mCursorPosY;
     private int mCursorLine, mCursorIndex;
-
     private int mCursorWidth;
-    private int waterWidth, waterHeight;
+
+    private int waterDropWidth, waterDropHeight;
     private int statusBarHeight;
     private int actionBarHeight;
     private int screenWidth, screenHeight;
+
+    private int selectHandleWidth, selectHandleHeight;
+    private int selectHandleLeftX, selectHandleLeftY;
+    private int selectHandleRightX, selectHandleRightY;
 
     private TextBuffer mTextBuffer;
 
@@ -55,6 +62,7 @@ public class TextView extends View implements OnScrollListener {
 
     private boolean showCursor = true;
     private boolean showWaterDrop = false;
+    private boolean hasSelectText = false;
 
     private final int MARGIN_LEFT = 100;
 
@@ -86,6 +94,7 @@ public class TextView extends View implements OnScrollListener {
 
         mDrawableCursorRes = context.getDrawable(R.drawable.abc_text_cursor_material);
         mDrawableCursorRes.setTint(Color.MAGENTA);
+
         mCursorWidth = mDrawableCursorRes.getIntrinsicWidth();
         if(mCursorWidth > 5) {
             // set cursor width
@@ -93,26 +102,29 @@ public class TextView extends View implements OnScrollListener {
         }
 
         // left water
-        mSelectHandleLeft = context.getDrawable(R.drawable.abc_text_select_handle_left_mtrl_dark);
-        mSelectHandleLeft.setTint(Color.MAGENTA);
-        Log.i(TAG, "left width: " + mSelectHandleLeft.getIntrinsicWidth());
+        mTextSelectHandleLeftRes = context.getDrawable(R.drawable.abc_text_select_handle_left_mtrl_dark);
+        mTextSelectHandleLeftRes.setTint(Color.MAGENTA);
+        mTextSelectHandleLeftRes.setColorFilter(Color.MAGENTA, PorterDuff.Mode.SRC_IN);
+
+        selectHandleWidth = mTextSelectHandleLeftRes.getIntrinsicWidth();
+        selectHandleHeight = mTextSelectHandleLeftRes.getIntrinsicHeight();
 
         // right water
-        mSelectHandleRight = context.getDrawable(R.drawable.abc_text_select_handle_right_mtrl_dark);
-        mSelectHandleRight.setTint(Color.MAGENTA);
+        mTextSelectHandleRightRes = context.getDrawable(R.drawable.abc_text_select_handle_right_mtrl_dark);
+        mTextSelectHandleRightRes.setTint(Color.MAGENTA);
 
         // middle water
-        mSelectHandleMiddle = context.getDrawable(R.drawable.abc_text_select_handle_middle_mtrl_dark);
-        mSelectHandleMiddle.setTint(Color.MAGENTA);
-        waterWidth = mSelectHandleMiddle.getIntrinsicWidth();
-        waterHeight = mSelectHandleMiddle.getIntrinsicHeight();
+        mTextSelectHandleMiddleRes = context.getDrawable(R.drawable.abc_text_select_handle_middle_mtrl_dark);
+        mTextSelectHandleMiddleRes.setTint(Color.MAGENTA);
+        waterDropWidth = mTextSelectHandleMiddleRes.getIntrinsicWidth();
+        waterDropHeight = mTextSelectHandleMiddleRes.getIntrinsicHeight();
 
         imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
         mGestureListener = new GestureListener();
         mGestureDetector = new GestureDetector(context, mGestureListener);
+        //mGestureDetector.setIsLongpressEnabled(false);
 
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaint.setColor(Color.GREEN);
         mPaint.setStrokeWidth(10);
@@ -228,7 +240,7 @@ public class TextView extends View implements OnScrollListener {
     @Override
     public int getPaddingLeft() {
         // TODO: Implement this method
-        return 10;
+        return 0;
     }
 
     @Override
@@ -261,14 +273,48 @@ public class TextView extends View implements OnScrollListener {
         setMeasuredDimension(width, height);
     }
 
+    // draw line background
     public void drawLineBackground(Canvas canvas) {
+        if(!hasSelectText) {
+            // draw current line background
+            canvas.drawRect(getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT,
+                            getPaddingTop() + mCursorPosY,
+                            getTextMaxWidth() + screenWidth / 4,
+                            mCursorPosY + getLineHeight(),
+                            mPaint
+                            );
+        } else {
+            // draw select text background
+            Path path = new Path();
+            mPaint.setColor(Color.YELLOW);
+            path.moveTo(selectHandleLeftX, selectHandleLeftY - getLineHeight());
+            path.lineTo(selectHandleRightX, selectHandleLeftY - getLineHeight());
+            path.lineTo(selectHandleRightX, selectHandleLeftY);
+            path.lineTo(selectHandleLeftX, selectHandleLeftY);
+            canvas.drawPath(path, mPaint);
+            mPaint.setColor(Color.GREEN);
+        }
+    }
 
-        canvas.drawRect(getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT,
-                        getPaddingTop() + mCursorPosY,
-                        getTextMaxWidth() + screenWidth / 4,
-                        mCursorPosY + getLineHeight(),
-                        mPaint
-                        );
+    // draw text select handle
+    public void drawSelectHandle(Canvas canvas) {
+        if(hasSelectText) {
+            // left water drop
+            mTextSelectHandleLeftRes.setBounds(selectHandleLeftX - selectHandleWidth + selectHandleWidth / 4,
+                                               selectHandleLeftY,
+                                               selectHandleLeftX + selectHandleWidth / 4,
+                                               selectHandleLeftY + selectHandleHeight
+                                               );
+            mTextSelectHandleLeftRes.draw(canvas);
+
+            // right water drop
+            mTextSelectHandleRightRes.setBounds(selectHandleRightX - selectHandleWidth / 4,
+                                                selectHandleRightY,
+                                                selectHandleRightX + selectHandleWidth - selectHandleWidth / 4,
+                                                selectHandleRightY + selectHandleHeight
+                                                );
+            mTextSelectHandleRightRes.draw(canvas);
+        }
     }
 
     // draw cursor
@@ -281,7 +327,7 @@ public class TextView extends View implements OnScrollListener {
                 half = mCursorWidth / 2;
             }
 
-            // draw cursor res
+            // draw text cursor 
             mDrawableCursorRes.setBounds(mCursorPosX - half,
                                          getPaddingTop() + mCursorPosY,
                                          mCursorPosX - half + mCursorWidth,
@@ -291,13 +337,13 @@ public class TextView extends View implements OnScrollListener {
         }
 
         if(showWaterDrop) {
-            // draw select text water res
-            mSelectHandleMiddle.setBounds(mCursorPosX - waterWidth / 2,
-                                          mCursorPosY + getLineHeight(),
-                                          mCursorPosX + waterWidth / 2,
-                                          mCursorPosY + getLineHeight() + waterHeight
-                                          );
-            mSelectHandleMiddle.draw(canvas);
+            // draw text select handle middle 
+            mTextSelectHandleMiddleRes.setBounds(mCursorPosX - waterDropWidth / 2,
+                                                 mCursorPosY + getLineHeight(),
+                                                 mCursorPosX + waterDropWidth / 2,
+                                                 mCursorPosY + getLineHeight() + waterDropHeight
+                                                 );
+            mTextSelectHandleMiddleRes.draw(canvas);
         }
     }
 
@@ -347,8 +393,11 @@ public class TextView extends View implements OnScrollListener {
         }
 
         drawLineBackground(canvas);
+
         // draw content text
         drawEditableText(canvas);
+
+        drawSelectHandle(canvas);
 
         drawCursor(canvas);
     }
@@ -360,11 +409,9 @@ public class TextView extends View implements OnScrollListener {
         super.onWindowFocusChanged(hasWindowFocus);
     }
 
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         // TODO: Implement this method
-
         switch(event.getAction()) {
         case MotionEvent.ACTION_DOWN:
         case MotionEvent.ACTION_MOVE:
@@ -538,12 +585,55 @@ public class TextView extends View implements OnScrollListener {
         return new TextInputConnection(this, true);
     }
 
+    // 
+    private int selectStart;
+    private int selectEnd;
+
+    private void findNearestWord() {
+        int left = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
+
+        String text = mTextBuffer.getLine(mCursorLine);
+        int start = getLineStart(mCursorLine);
+        int end = start + text.length() - 1;
+
+        // select text start index
+        for(selectStart = mCursorIndex; selectStart >= start; --selectStart) {
+            char c = mTextBuffer.getCharAt(selectStart);
+            if(!Character.isJavaIdentifierPart(c))
+                break;
+        }
+
+        // select text end index
+        for(selectEnd = mCursorIndex; selectEnd <= end; ++selectEnd) {
+            char c = mTextBuffer.getCharAt(selectEnd);
+            if(!Character.isJavaIdentifierPart(c))
+                break;
+        }
+
+        // select start index need add
+        ++selectStart;
+        if(selectStart <= selectEnd) {
+            // get the select word
+            String selectWord = text.substring(selectStart - start, selectEnd - start);
+            //Log.i(TAG, "word:" + selectWord);
+            
+            if(selectWord != null && !selectWord.equals("")) {
+                hasSelectText = true;
+                // select handle left (x y)
+                selectHandleLeftX = left + (int)mTextPaint.measureText(text.substring(0, selectStart - start));
+
+                selectHandleRightX = left + (int)mTextPaint.measureText(text.substring(0, selectEnd - start));
+
+                selectHandleLeftY = selectHandleRightY = mCursorPosY + getLineHeight();
+            }
+        }
+    }
 
     class GestureListener extends GestureDetector.SimpleOnGestureListener {
 
-        private boolean isHandleMiddleTouched = false;
-        private boolean isHandleLeftTouched = false;
-        private boolean isHandleRightTouched = false;
+        private boolean touchOnSelectHandleMiddle = false;
+        private boolean touchOnSelectHandleLeft = false;
+        private boolean touchOnSelectHandleRight = false;
 
 
         @Override
@@ -551,15 +641,36 @@ public class TextView extends View implements OnScrollListener {
             // TODO: Implement this method
             float x = e.getX();
             float y = e.getY();
-      
-            // middle water
-            if(showWaterDrop && x >= mCursorPosX - waterWidth / 2 && x <= mCursorPosX + waterWidth / 2
-               && y >= mCursorPosY + getLineHeight() && y <= mCursorPosY + getLineHeight() + waterHeight) {
-                isHandleMiddleTouched = true;
+
+            // touch middle water drop
+            if(showWaterDrop && x >= mCursorPosX - waterDropWidth / 2 && x <= mCursorPosX + waterDropWidth / 2
+                && y >= mCursorPosY + getLineHeight() && y <= mCursorPosY + getLineHeight() + waterDropHeight) {
+                
+                touchOnSelectHandleMiddle = true;
                 stopBlink(true);
                 showWaterDrop(true);
             }
             
+            // touch left water drop
+            if(hasSelectText && x >= selectHandleLeftX - selectHandleWidth + selectHandleWidth / 4 
+                && x <= selectHandleLeftX + selectHandleWidth / 4 
+                && y >= selectHandleLeftY && y <= selectHandleLeftY + selectHandleHeight) {
+                
+                touchOnSelectHandleLeft = true;
+                stopBlink(false);
+                showWaterDrop(false);
+            }
+            
+            // touch right water drop
+            if(hasSelectText && x >= selectHandleRightX - selectHandleWidth / 4 
+                && x <= selectHandleRightX + selectHandleWidth - selectHandleWidth / 4 
+                && y >= selectHandleRightY && y <= selectHandleRightY + selectHandleHeight){
+                    
+                touchOnSelectHandleRight = true;
+                stopBlink(false);
+                showWaterDrop(false);
+            }
+
             return super.onDown(e);
         }
 
@@ -586,13 +697,30 @@ public class TextView extends View implements OnScrollListener {
 
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            
-            if(isHandleMiddleTouched) {
-                setCursorPosition(e2.getX(), e2.getY() - getLineHeight() - waterHeight);
+            if(touchOnSelectHandleMiddle) {
+                // Y = getY() - getLineHeight() - getLineHeight() / 2
+                // e2.getY()现在按下的位置要比光标所有位置大(按在水滴上)
+                // 所以实际光标所在位置等于e2.getY()减去一些距离
+                setCursorPosition(e2.getX(), e2.getY() - getLineHeight() * 3 / 2);
+                
+            } else if(touchOnSelectHandleLeft) {
+                // calculation select handle left coordinate and index
+                setCursorPosition(e2.getX(), e2.getY() - getLineHeight() * 3 / 2);
+                selectHandleLeftX = mCursorPosX;
+                selectHandleLeftY = mCursorPosY + getLineHeight();
+                selectStart = mCursorIndex;
+                
+            } else if(touchOnSelectHandleRight) {
+                // calculation select handle right coordinate and index
+                setCursorPosition(e2.getX(), e2.getY() - getLineHeight() * 3 / 2);
+                selectHandleRightX = mCursorPosX;
+                selectHandleRightY = mCursorPosY + getLineHeight();
+                selectEnd = mCursorIndex;
+                
             } else {
                 onUp(e2);
             }
-                  
+
             postInvalidate();
             return super.onScroll(e1, e2, distanceX, distanceY);
         }
@@ -602,14 +730,25 @@ public class TextView extends View implements OnScrollListener {
         public void onLongPress(MotionEvent e) {
             // TODO: Implement this method
             super.onLongPress(e);
+            if(!touchOnSelectHandleMiddle) {
+                setCursorPosition(e.getX(), e.getY());
+                findNearestWord();
+            } else {
+                onUp(e);
+            }
+            postInvalidate();
         }
 
 
         public void onUp(MotionEvent e) {
             TextView.this.getParent().requestDisallowInterceptTouchEvent(false);
-            
-            if(isHandleMiddleTouched) {
-                isHandleMiddleTouched = false;
+
+            if(touchOnSelectHandleMiddle || touchOnSelectHandleLeft 
+                || touchOnSelectHandleRight) {
+                
+                touchOnSelectHandleMiddle = false;
+                touchOnSelectHandleLeft = false;
+                touchOnSelectHandleRight = false;
                 startBlink();
                 hideWaterDrop();
             }
