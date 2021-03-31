@@ -64,12 +64,12 @@ public class TextBuffer implements Serializable {
         return strBuffer.charAt(index);
     }
 
-    private int getCharWidth() {
-        return (int)textPaint.measureText("0");
+    public int getCharWidth(char c) {
+        return (int)textPaint.measureText(String.valueOf(c));
     }
 
     public int getLineNumberWidth() {
-        return String.valueOf(getLineCount()).length() * getCharWidth();
+        return String.valueOf(getLineCount()).length() * getCharWidth('0');
     }
 
     public void setTextMaxWidth(int textWidth) {
