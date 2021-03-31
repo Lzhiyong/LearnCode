@@ -29,7 +29,7 @@ import android.view.MotionEvent;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextView mTextEdit;
+    private HighlightTextView mTextView;
 
     private TextBuffer mTextBuffer;
 
@@ -45,14 +45,14 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().hide();
 
 
-        mTextEdit = findViewById(R.id.mTextEdit);
-        //mTextEdit.setTypeface(Typeface.MONOSPACE);
+        mTextView = findViewById(R.id.mTextView);
+        //mTextView.setTypeface(Typeface.MONOSPACE);
 
-        ((TextScrollView)findViewById(R.id.mScrollView)).setScrollListener(mTextEdit.getScrollListener());
-        ((TextHorizontalScrollView)findViewById(R.id.mHorizontalScrollView)).setScrollListener(mTextEdit.getScrollListener());
+        ((TextScrollView)findViewById(R.id.mScrollView)).setScrollListener(mTextView.getScrollListener());
+        ((TextHorizontalScrollView)findViewById(R.id.mHorizontalScrollView)).setScrollListener(mTextView.getScrollListener());
 
-        mTextBuffer = new TextBuffer(mTextEdit.getPaint());
-        mTextEdit.setTextBuffer(mTextBuffer);
+        mTextBuffer = new TextBuffer(mTextView.getPaint());
+        mTextView.setTextBuffer(mTextBuffer);
 
         String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
@@ -114,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
 
             while((text = br.readLine()) != null) {
                 ++lineCount;
-                width = mTextEdit.getPaint().measureText(text);
+                width = mTextView.getPaint().measureText(text);
                 if(width > maxWidth)
                     maxWidth = width;
                 buf.append(text + "\n");
@@ -137,6 +137,6 @@ public class MainActivity extends AppCompatActivity {
         mTextBuffer.setIndexList(indexList);
         mTextBuffer.setTextMaxWidth((int)maxWidth);
 
-        mTextEdit.setCursorPosition(0, 0);
+        mTextView.setCursorPosition(0, 0);
     }
 }

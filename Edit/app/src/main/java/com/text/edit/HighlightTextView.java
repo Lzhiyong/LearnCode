@@ -29,7 +29,7 @@ import android.graphics.PorterDuff;
 import androidx.core.graphics.drawable.DrawableCompat;
 
 
-public class TextView extends View implements OnScrollListener {
+public class HighlightTextView extends View implements OnScrollListener {
 
     private Paint mPaint;
     private TextPaint mTextPaint;
@@ -69,18 +69,18 @@ public class TextView extends View implements OnScrollListener {
     private final String TAG = this.getClass().getSimpleName();
 
 
-    public TextView(Context context) {
+    public HighlightTextView(Context context) {
         super(context);
         initView(context);
     }
 
-    public TextView(Context context, AttributeSet attrs) {
+    public HighlightTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
         initView(context);
 
     }
 
-    public TextView(Context context, AttributeSet attrs, int defStyle) {
+    public HighlightTextView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         initView(context);
     }
@@ -741,7 +741,7 @@ public class TextView extends View implements OnScrollListener {
 
 
         public void onUp(MotionEvent e) {
-            TextView.this.getParent().requestDisallowInterceptTouchEvent(false);
+            HighlightTextView.this.getParent().requestDisallowInterceptTouchEvent(false);
 
             if(touchOnSelectHandleMiddle || touchOnSelectHandleLeft 
                 || touchOnSelectHandleRight) {
