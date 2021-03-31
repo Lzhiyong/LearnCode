@@ -128,7 +128,7 @@ public class HighlightTextView extends View implements OnScrollListener {
         mGestureListener = new GestureListener();
         mGestureDetector = new GestureDetector(context, mGestureListener);
         //mGestureDetector.setIsLongpressEnabled(false);
-        
+
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaint.setColor(Color.GREEN);
@@ -290,9 +290,9 @@ public class HighlightTextView extends View implements OnScrollListener {
                             );
         } else {
             // draw select text background
-            Path path = new Path();
-            mPaint.setColor(Color.YELLOW);
+            //Path path = new Path();
             //path.moveTo(selectHandleLeftX, selectHandleLeftY - getLineHeight());
+            mPaint.setColor(Color.YELLOW);
 
             int left = getPaddingLeft() + getLineNumberWidth() + MARGIN_LEFT;
             // get the space width
@@ -307,24 +307,22 @@ public class HighlightTextView extends View implements OnScrollListener {
                 for(int i=start; i <= end; ++i) {
                     int lineWidth = getLineWidth(i) + spaceWidth;
                     if(i == start) {
-                        path.addRect(selectHandleLeftX, selectHandleLeftY - lineHeight,
-                                     left + lineWidth, selectHandleLeftY, Path.Direction.CW);
+                        canvas.drawRect(selectHandleLeftX, selectHandleLeftY - lineHeight,
+                                        left + lineWidth, selectHandleLeftY, mPaint);
                     } else if(i == end) {
-                        path.addRect(left, selectHandleRightY - lineHeight,
-                                     selectHandleRightX, selectHandleRightY, Path.Direction.CW);
+                        canvas.drawRect(left, selectHandleRightY - lineHeight,
+                                        selectHandleRightX, selectHandleRightY, mPaint);
                     } else {
-                        path.addRect(left, (i - 1) * lineHeight,
-                                     left + lineWidth, i * lineHeight, Path.Direction.CW);
+                        canvas.drawRect(left, (i - 1) * lineHeight,
+                                        left + lineWidth, i * lineHeight, mPaint);
                     }
                 }
             } else {
                 // start line = end line
-                path.addRect(selectHandleLeftX, selectHandleLeftY - getLineHeight(),
-                             selectHandleRightX, selectHandleRightY, Path.Direction.CW);
+                canvas.drawRect(selectHandleLeftX, selectHandleLeftY - getLineHeight(),
+                                selectHandleRightX, selectHandleRightY, mPaint);
             }
 
-            path.close();
-            canvas.drawPath(path, mPaint);
             mPaint.setColor(Color.GREEN);
         }
     }
@@ -660,12 +658,32 @@ public class HighlightTextView extends View implements OnScrollListener {
         }
     }
 
+
+
     class GestureListener extends GestureDetector.SimpleOnGestureListener {
 
         private boolean touchOnSelectHandleMiddle = false;
         private boolean touchOnSelectHandleLeft = false;
         private boolean touchOnSelectHandleRight = false;
 
+        // exchange text select handle left and right
+        private void swapSelectHandle() {
+
+            selectHandleLeftX = selectHandleLeftX ^ selectHandleRightX;
+            selectHandleRightX = selectHandleLeftX ^ selectHandleRightX;
+            selectHandleLeftX = selectHandleLeftX ^ selectHandleRightX;
+            
+            selectHandleLeftY = selectHandleLeftY ^ selectHandleRightY;
+            selectHandleRightY = selectHandleLeftY ^ selectHandleRightY;
+            selectHandleLeftY = selectHandleLeftY ^ selectHandleRightY;
+
+            selectStart = selectStart ^ selectEnd;
+            selectEnd = selectStart ^ selectEnd;
+            selectStart = selectStart ^ selectEnd;
+            
+            touchOnSelectHandleLeft = !touchOnSelectHandleLeft;
+            touchOnSelectHandleRight = !touchOnSelectHandleRight;
+        }
 
         @Override
         public boolean onDown(MotionEvent e) {
@@ -751,6 +769,13 @@ public class HighlightTextView extends View implements OnScrollListener {
             } else {
                 onUp(e2);
             }
+            
+            if(hasSelectText && ((selectHandleLeftY > selectHandleRightY) 
+               || (selectHandleLeftY == selectHandleRightY 
+               && selectHandleLeftX > selectHandleRightX))) {
+               // exchange
+               swapSelectHandle();
+           }
 
             postInvalidate();
             return super.onScroll(e1, e2, distanceX, distanceY);
