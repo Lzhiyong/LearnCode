@@ -35,5 +35,6 @@ public class TextScrollView extends ScrollView {
             mScrollListener.onScrollY(t, oldt);
         }
     }
+    
 }
 

@@ -48,12 +48,13 @@ public class MainActivity extends AppCompatActivity {
         mTextView = findViewById(R.id.mTextView);
         //mTextView.setTypeface(Typeface.MONOSPACE);
 
-        ((TextScrollView)findViewById(R.id.mScrollView)).setScrollListener(mTextView.getScrollListener());
-        ((TextHorizontalScrollView)findViewById(R.id.mHorizontalScrollView)).setScrollListener(mTextView.getScrollListener());
+        TextScrollView scrollView = findViewById(R.id.mScrollView);
+        TextHorizontalScrollView horizontalScrollView = findViewById(R.id.mHorizontalScrollView);
+        
+        mTextView.setScrollView(scrollView, horizontalScrollView);
 
         mTextBuffer = new TextBuffer(mTextView.getPaint());
-        mTextView.setTextBuffer(mTextBuffer);
-
+        
         String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
         if(!hasPermission(permission)) {
@@ -102,7 +103,8 @@ public class MainActivity extends AppCompatActivity {
         indexList.add(0);
 
         int lineCount = 0;
-        float maxWidth = 0;
+        int maxWidth = 0;
+        int maxWidthLine = 0;
 
         try {
             in = new FileInputStream(new File(pathname));
@@ -110,13 +112,15 @@ public class MainActivity extends AppCompatActivity {
             br = new BufferedReader(reader);
             String text = null;
 
-            float width = 0;
+            int width = 0;
 
             while((text = br.readLine()) != null) {
                 ++lineCount;
-                width = mTextView.getPaint().measureText(text);
-                if(width > maxWidth)
+                width = (int)mTextView.getPaint().measureText(text);
+                if(width > maxWidth) {
                     maxWidth = width;
+                    maxWidthLine = lineCount;
+                }
                 buf.append(text + "\n");
                 indexList.add(buf.length());
             }
@@ -135,8 +139,10 @@ public class MainActivity extends AppCompatActivity {
         mTextBuffer.setBuffer(buf);
         mTextBuffer.setLineCount(lineCount);
         mTextBuffer.setIndexList(indexList);
-        mTextBuffer.setTextMaxWidth((int)maxWidth);
+        mTextBuffer.setMaxWidth(maxWidth);
+        mTextBuffer.setMaxWidthLine(maxWidthLine);
 
+        mTextView.setTextBuffer(mTextBuffer);
         mTextView.setCursorPosition(0, 0);
     }
 }

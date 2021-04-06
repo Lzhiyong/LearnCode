@@ -22,12 +22,15 @@
 	<com.text.edit.TextScrollView
         android:id="@+id/mScrollView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="true"
+        android:fadeScrollbars="true"
         android:scrollbars="vertical">
         <com.text.edit.TextHorizontalScrollView
             android:id="@+id/mHorizontalScrollView"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:fillViewport="true"
             android:scrollbars="none">
 			<com.text.edit.HighlightTextView
 				android:id="@+id/mTextView"
@@ -39,3 +42,4 @@
     </com.text.edit.TextScrollView>
 
 </LinearLayout>
+
