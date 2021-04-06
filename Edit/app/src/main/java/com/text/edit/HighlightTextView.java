@@ -55,7 +55,6 @@ public class HighlightTextView extends View implements OnScrollListener {
 
     private int selectionStart, selectionEnd;
 
-    private StringBuffer tab = null;
     private int tabWidth, spaceWidth;
     private int mTextWidth, mTextHeight;
 
@@ -131,20 +130,13 @@ public class HighlightTextView extends View implements OnScrollListener {
         //mGestureDetector.setIsLongpressEnabled(false);
 
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        setTextSize(16);
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaint.setColor(Color.GREEN);
         mPaint.setStrokeWidth(10);
-        // set text size 18dp
-        setTextSize(18);
 
-        tab = new StringBuffer();
-        for(int i=0; i < 4; ++i) {
-            tab.append(' ');
-        }
-
-        tabWidth = (int) mTextPaint.measureText(tab.toString());
-
-        spaceWidth = (int) mTextPaint.measureText(" ");
+        spaceWidth = (int) mTextPaint.measureText(String.valueOf(' '));
+        tabWidth = spaceWidth * 4;
 
         mCursorIndex = 0;
         mCursorLine = 1;
@@ -227,10 +219,10 @@ public class HighlightTextView extends View implements OnScrollListener {
         return mTextBuffer.getLineHeight();
     }
 
-    private int getCharWidth(int index){
+    private int getCharWidth(int index) {
         return mTextBuffer.getCharWidth(mTextBuffer.getCharAt(index));
     }
-    
+
     private int getTextWidth() {
         return mTextBuffer.getMaxWidth();
     }
@@ -268,7 +260,7 @@ public class HighlightTextView extends View implements OnScrollListener {
         }
     }
 
-    public int getLeftMargin() {
+    public int getLeftSpace() {
         return getPaddingLeft() + getLineNumberWidth() + SPACEING;
     }
 
@@ -288,7 +280,7 @@ public class HighlightTextView extends View implements OnScrollListener {
 
     // Get the maximum scrollable width
     public int getMaxScrollX() {
-        return Math.max(screenWidth, getLeftMargin() + getTextWidth() + spaceWidth * 4);
+        return Math.max(screenWidth, getLeftSpace() + getTextWidth() + spaceWidth * 4);
     }
 
     // Get the maximum scrollable height
@@ -311,7 +303,7 @@ public class HighlightTextView extends View implements OnScrollListener {
 
         if(!hasSelectText) {
             // draw current line background
-            canvas.drawRect(getLeftMargin(),
+            canvas.drawRect(getLeftSpace(),
                             getPaddingTop() + mCursorPosY,
                             getMaxScrollX(),
                             mCursorPosY + getLineHeight(),
@@ -323,7 +315,7 @@ public class HighlightTextView extends View implements OnScrollListener {
             //path.moveTo(selectHandleLeftX, selectHandleLeftY - getLineHeight());
             mPaint.setColor(Color.YELLOW);
 
-            int left = getLeftMargin();
+            int left = getLeftSpace();
             int lineHeight = getLineHeight();
 
             int start = selectHandleLeftY / getLineHeight();
@@ -357,7 +349,7 @@ public class HighlightTextView extends View implements OnScrollListener {
     // draw text select handle
     public void drawSelectHandle(Canvas canvas) {
         if(hasSelectText) {
-            // left water drop
+            // select handle left
             mTextSelectHandleLeftRes.setBounds(selectHandleLeftX - selectHandleWidth + selectHandleWidth / 4,
                                                selectHandleLeftY,
                                                selectHandleLeftX + selectHandleWidth / 4,
@@ -365,7 +357,7 @@ public class HighlightTextView extends View implements OnScrollListener {
                                                );
             mTextSelectHandleLeftRes.draw(canvas);
 
-            // right water drop
+            // select handle right
             mTextSelectHandleRightRes.setBounds(selectHandleRightX - selectHandleWidth / 4,
                                                 selectHandleRightY,
                                                 selectHandleRightX + selectHandleWidth - selectHandleWidth / 4,
@@ -378,10 +370,9 @@ public class HighlightTextView extends View implements OnScrollListener {
     // draw cursor
     public void drawCursor(Canvas canvas) {
         if(showCursor) {
-
-            int left = getLeftMargin();
+            int left = getLeftSpace();
             int half = 0;
-            if(mCursorPosX > left) {
+            if(mCursorPosX >= left) {
                 half = mCursorWidth / 2;
             }
 
@@ -501,7 +492,7 @@ public class HighlightTextView extends View implements OnScrollListener {
     // when the text has changed, you need to re-layout
     public void onTextChanged() {
         if(mTextWidth != getTextWidth() || mTextHeight < getTextHeight() 
-            || mCursorPosY - mScrollY <=0 && mCursorPosY - mScrollY >= -getLineHeight()) {
+           || mCursorPosY - mScrollY <= 0 && mCursorPosY - mScrollY >= -getLineHeight()) {
             requestLayout();
         } else {
             scrollToVisable(spaceWidth * 3, 0, spaceWidth * 2, getLineHeight());
@@ -512,7 +503,7 @@ public class HighlightTextView extends View implements OnScrollListener {
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         // TODO: Implement this method
         super.onLayout(changed, left, top, right, bottom);
-        
+
         mTextWidth = getTextWidth();
         mTextHeight = getTextHeight();
         // after layout needs to scroll
@@ -532,18 +523,18 @@ public class HighlightTextView extends View implements OnScrollListener {
             dx = mCursorPosX - mScrollX - left;
         else if(mCursorPosX - mScrollX >= screenWidth - right) 
             dx = mCursorPosX - screenWidth - mScrollX + right;
-        
+
         mHorizontalScrollView.smoothScrollBy(dx, 0); 
 
         // vertical direction
         int dy = 0;
-        if(mCursorPosY - mScrollY<= top)
+        if(mCursorPosY - mScrollY <= top)
             dy = mCursorPosY - mScrollY - top;
         else if(mCursorPosY - mScrollY >= mScrollView.getHeight() - bottom)
             dy = mCursorPosY - mScrollY - mScrollView.getHeight() + bottom;
 
         mScrollView.smoothScrollBy(0, dy);
-        
+
     }
 
 
@@ -557,14 +548,14 @@ public class HighlightTextView extends View implements OnScrollListener {
         ++mCursorIndex;
 
         if(c == '\n') {
-            mCursorPosX = getLeftMargin();
+            mCursorPosX = getLeftSpace();
             mCursorPosY += getLineHeight();
             ++mCursorLine;
         } else {
             adjustCursorPositionX();
         }
 
-        invalidate();
+        postInvalidate();
         onTextChanged();
         startBlink();
     }
@@ -595,7 +586,15 @@ public class HighlightTextView extends View implements OnScrollListener {
         char c = mTextBuffer.getCharAt(mCursorIndex);
 
         if(c == '\n') {
-            mCursorPosX = getLeftMargin() + getLineWidth(mCursorLine - 1);
+            int left = 0;
+            if(mCursorLine == getLineCount()) {
+                left = getPaddingLeft()  + SPACEING
+                    + String.valueOf(mCursorLine - 1).length() * mTextBuffer.getCharWidth('0');
+            } else {
+                left = getLeftSpace();
+            }
+
+            mCursorPosX = left + getLineWidth(mCursorLine - 1);
             mCursorPosY -= getLineHeight();
             --mCursorLine;
         } else {
@@ -604,17 +603,17 @@ public class HighlightTextView extends View implements OnScrollListener {
 
         mTextBuffer.delete(mCursorIndex, mCursorLine);
 
-        invalidate();
+        postInvalidate();
         onTextChanged();
         startBlink();
     }
 
     private void adjustCursorPositionX() {
-        int startIndex = getLineStart(mCursorLine);
+        int start = getLineStart(mCursorLine);
 
-        String text = mTextBuffer.getLine(mCursorLine).substring(0, mCursorIndex - startIndex);
-        
-        mCursorPosX = getLeftMargin() + (int)mTextPaint.measureText(text);
+        String text = mTextBuffer.getLine(mCursorLine).substring(0, mCursorIndex - start);
+
+        mCursorPosX = getLeftSpace() + (int)mTextPaint.measureText(text);
     }
 
 //    private void adjustCursorPositionY() {
@@ -702,7 +701,7 @@ public class HighlightTextView extends View implements OnScrollListener {
 
     // 
     private void findNearestWord() {
-        int left = getPaddingLeft() + getLineNumberWidth() + SPACEING;
+        int left = getLeftSpace();
 
         String text = mTextBuffer.getLine(mCursorLine);
         int start = getLineStart(mCursorLine);
@@ -741,39 +740,40 @@ public class HighlightTextView extends View implements OnScrollListener {
         }
     }
 
-    
-    private Runnable moveAction = new Runnable() {
-
-        @Override
-        public void run() {
-            // TODO: Implement this method
-        }
-    };
-    
-    
-    private void autoScroll(int slopX, int slopY){
-        if(mCursorPosX - mScrollX <= slopX){
+    // auto scroll select handle and cursor
+    private void autoMove(int slopX, int slopY) {
+        if(mCursorPosX - mScrollX <= slopX) {
             // left scroll
-            
             mHorizontalScrollView.scrollBy(-getCharWidth(mCursorIndex), 0);
-        } else if(mCursorPosX - mScrollX >= screenWidth - slopX){
+        } else if(mCursorPosX - mScrollX >= screenWidth - slopX) {
             // right scroll
             mHorizontalScrollView.scrollBy(getCharWidth(mCursorIndex + 1), 0);
-        } else if(mCursorPosY - mScrollY <= 0){
+        } else if(mCursorPosY - mScrollY <= 0) {
             // up scroll
             mScrollView.scrollBy(0, -getLineHeight());
-        } else if(mCursorPosY - mScrollY >= mScrollView.getHeight() - slopY){
+        } else if(mCursorPosY - mScrollY >= mScrollView.getHeight() - slopY) {
             // down scroll
             mScrollView.scrollBy(0, getLineHeight());
         }
-    }
-    
+    }  
+
 
     class GestureListener extends GestureDetector.SimpleOnGestureListener {
 
         private boolean touchOnSelectHandleMiddle = false;
         private boolean touchOnSelectHandleLeft = false;
         private boolean touchOnSelectHandleRight = false;
+
+        // for auto scroll select handle
+        private Runnable moveAction = new Runnable() {
+
+            @Override
+            public void run() {
+                // TODO: Implement this method
+                autoMove(spaceWidth * 4, getLineHeight());
+                postDelayed(moveAction, 250);
+            }
+        };
 
         // swap text select handle left and right
         private void swapSelection() {
@@ -858,11 +858,13 @@ public class HighlightTextView extends View implements OnScrollListener {
                 // Y = getY() - getLineHeight() - getLineHeight() / 2
                 // e2.getY()现在按下的位置要比光标所有位置大(按在水滴上)
                 // 所以实际光标所在位置等于e2.getY()减去一些距离
-                autoScroll(spaceWidth * 4, getLineHeight() * 2);
+                removeCallbacks(moveAction);
+                post(moveAction);
                 setCursorPosition(e2.getX(), e2.getY() - getLineHeight() * 3 / 2);
 
             } else if(touchOnSelectHandleLeft) {
-                autoScroll(spaceWidth * 4, getLineHeight() * 2);
+                removeCallbacks(moveAction);
+                post(moveAction);
                 // calculation select handle left coordinate and index
                 setCursorPosition(e2.getX(), e2.getY() - getLineHeight() * 3 / 2);
                 selectHandleLeftX = mCursorPosX;
@@ -870,7 +872,8 @@ public class HighlightTextView extends View implements OnScrollListener {
                 selectionStart = mCursorIndex;
 
             } else if(touchOnSelectHandleRight) {
-                autoScroll(spaceWidth * 4, getLineHeight() * 2);
+                removeCallbacks(moveAction);
+                post(moveAction);
                 // calculation select handle right coordinate and index
                 setCursorPosition(e2.getX(), e2.getY() - getLineHeight() * 3 / 2);
                 selectHandleRightX = mCursorPosX;
@@ -913,6 +916,7 @@ public class HighlightTextView extends View implements OnScrollListener {
             if(touchOnSelectHandleMiddle || touchOnSelectHandleLeft 
                || touchOnSelectHandleRight) {
 
+                removeCallbacks(moveAction);
                 touchOnSelectHandleMiddle = false;
                 touchOnSelectHandleLeft = false;
                 touchOnSelectHandleRight = false;

@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
         TextHorizontalScrollView horizontalScrollView = findViewById(R.id.mHorizontalScrollView);
         
         mTextView.setScrollView(scrollView, horizontalScrollView);
-
+        
         mTextBuffer = new TextBuffer(mTextView.getPaint());
         
         String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
@@ -140,6 +140,7 @@ public class MainActivity extends AppCompatActivity {
         mTextBuffer.setLineCount(lineCount);
         mTextBuffer.setIndexList(indexList);
         mTextBuffer.setMaxWidth(maxWidth);
+        mTextBuffer.setMaxHeight(lineCount * mTextBuffer.getLineHeight());
         mTextBuffer.setMaxWidthLine(maxWidthLine);
 
         mTextView.setTextBuffer(mTextBuffer);

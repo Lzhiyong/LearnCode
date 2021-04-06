@@ -1,11 +1,9 @@
 package com.text.edit;
 
 import android.text.TextPaint;
+import android.util.Log;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
-import android.util.Log;
-import android.os.AsyncTask;
 
 public class TextBuffer implements Serializable {
 
@@ -97,6 +95,9 @@ public class TextBuffer implements Serializable {
         return maxWidth;
     }
 
+    public void setMaxHeight(int textHeight) {
+        maxHeight = textHeight;
+    }
 
     public int getMaxHeight() {
         return maxHeight;
@@ -170,8 +171,6 @@ public class TextBuffer implements Serializable {
             maxWidth = width;
             maxWidthLine = line;
         }
-        
-        Log.i(TAG, "maxWidth: " + maxWidth);
     }
     
     private void resetMaxHeight(){
@@ -223,5 +222,4 @@ public class TextBuffer implements Serializable {
     public synchronized void delete(int start, int end, int line) {
         strBuilder.delete(start, end);
     }
-    
 }
