@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         mTextView = findViewById(R.id.mTextView);
-        //mTextView.setTypeface(Typeface.MONOSPACE);
+        mTextView.setTypeface(Typeface.MONOSPACE);
 
         TextScrollView scrollView = findViewById(R.id.mScrollView);
         TextHorizontalScrollView horizontalScrollView = findViewById(R.id.mHorizontalScrollView);

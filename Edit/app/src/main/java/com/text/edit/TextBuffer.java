@@ -31,9 +31,8 @@ public class TextBuffer implements Serializable {
     public TextBuffer(TextPaint textPaint) {
         this.textPaint = textPaint;
         
-        TextPaint.FontMetrics metrics = textPaint.getFontMetrics();
-        lineHeight = (int) (metrics.descent - metrics.ascent);
-        
+        TextPaint.FontMetricsInt metrics = textPaint.getFontMetricsInt();
+        lineHeight = metrics.bottom - metrics.top;
         Log.i(TAG, "line height: " + lineHeight);
     }
 
@@ -85,6 +84,10 @@ public class TextBuffer implements Serializable {
 
     public void setMaxWidthLine(int line) {
         maxWidthLine = line;
+    }
+    
+    public int getMaxWidthLine(){
+        return maxWidthLine;
     }
 
     public void setMaxWidth(int textWidth) {
@@ -211,7 +214,8 @@ public class TextBuffer implements Serializable {
         } 
 
         // calculation text max width
-        resetMaxWidth(line);
+        if(line != maxWidthLine)
+            resetMaxWidth(line);
         
         // calculation line start index
         for(int i=line; i < lineCount; ++i) {
@@ -221,5 +225,15 @@ public class TextBuffer implements Serializable {
 
     public synchronized void delete(int start, int end, int line) {
         strBuilder.delete(start, end);
+    }
+    
+    class TextThread extends Thread {
+
+        @Override
+        public void run() {
+            // TODO: Implement this method
+            super.run();
+            
+        }
     }
 }

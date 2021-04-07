@@ -84,7 +84,6 @@ public class HighlightTextView extends View implements OnScrollListener {
     public HighlightTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
         initView(context);
-
     }
 
     public HighlightTextView(Context context, AttributeSet attrs, int defStyle) {
@@ -131,7 +130,7 @@ public class HighlightTextView extends View implements OnScrollListener {
         //mGestureDetector.setIsLongpressEnabled(false);
 
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        setTextSize(16);
+        setTextSize(35);
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaint.setColor(Color.GREEN);
         mPaint.setStrokeWidth(10);
@@ -182,13 +181,36 @@ public class HighlightTextView extends View implements OnScrollListener {
     public TextPaint getPaint() {
         return mTextPaint;
     }
+    
+    //
+    public void setScrollView(TextScrollView scrollView, 
+                              TextHorizontalScrollView horizontalScrollView) {
+        mScrollView = scrollView;
+        mHorizontalScrollView = horizontalScrollView;
 
+        if(mScrollView != null) {
+            mScrollView.setScrollListener(this);
+            mScrollView.setSmoothScrollingEnabled(true);
+        }
+
+        if(mHorizontalScrollView != null) {
+            mHorizontalScrollView.setScrollListener(this);
+            mHorizontalScrollView.setSmoothScrollingEnabled(true);
+        }
+    }
+    
+    public int getLeftSpace() {
+        return getPaddingLeft() + getLineNumberWidth() + SPACEING;
+    }
+
+    
+    // ===========================================
+    // TextBuffer method
     private int getLineCount() {
         return mTextBuffer.getLineCount();
     }
-
-    // ===========================================
-    // TextBuffer method
+    
+    
     private int getLineHeight() {
         return mTextBuffer.getLineHeight();
     }
@@ -219,27 +241,7 @@ public class HighlightTextView extends View implements OnScrollListener {
 
     // ===========================================
 
-    //
-    public void setScrollView(TextScrollView scrollView, 
-                              TextHorizontalScrollView horizontalScrollView) {
-        mScrollView = scrollView;
-        mHorizontalScrollView = horizontalScrollView;
-
-        if(mScrollView != null) {
-            mScrollView.setScrollListener(this);
-            mScrollView.setSmoothScrollingEnabled(true);
-        }
-
-        if(mHorizontalScrollView != null) {
-            mHorizontalScrollView.setScrollListener(this);
-            mHorizontalScrollView.setSmoothScrollingEnabled(true);
-        }
-    }
-
-    public int getLeftSpace() {
-        return getPaddingLeft() + getLineNumberWidth() + SPACEING;
-    }
-
+    
     @Override
     public void onScrollX(int scrollX, int oldX) {
         // TODO: Implement this method
@@ -264,7 +266,7 @@ public class HighlightTextView extends View implements OnScrollListener {
         return Math.max(screenHeight / 2, getTextHeight() + getLineHeight() * 2);
     }
 
-
+    
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 
@@ -375,23 +377,17 @@ public class HighlightTextView extends View implements OnScrollListener {
     // draw content text
     public void drawEditableText(Canvas canvas) {
 
-        int startLine = mScrollY / getLineHeight();
+        int startLine = Math.max(mScrollY / getLineHeight(), 1);
 
-        int endLine = (mScrollY + statusBarHeight + mScrollView.getHeight()) / getLineHeight();
-
-        if(startLine < 1)
-            startLine = 1;
-
-        if(endLine > getLineCount())
-            endLine = getLineCount();
+        int endLine = Math.min((mScrollY + statusBarHeight + mScrollView.getHeight()) / getLineHeight(), getLineCount());
 
         int lineNumWidth = getLineNumberWidth();
-
+        
         for(int i=startLine; i <= endLine; ++i) {
 
             int textX = getPaddingLeft();
             // baseline
-            int textY = statusBarHeight + (i - 1) * getLineHeight() - (int)mTextPaint.descent();
+            int textY =  i * getLineHeight() - (int)mTextPaint.descent();
 
             // draw line number
             mTextPaint.setColor(Color.GRAY);
@@ -403,6 +399,7 @@ public class HighlightTextView extends View implements OnScrollListener {
             // draw content text
             textX += (lineNumWidth + SPACEING);
             mTextPaint.setColor(Color.BLACK);
+            
             canvas.drawText(mTextBuffer.getLine(i), textX, textY, mTextPaint);
         }
     }
@@ -553,7 +550,6 @@ public class HighlightTextView extends View implements OnScrollListener {
         showWaterDrop = false;
 
         --mCursorIndex;
-
         // cursor x at first position
         if(mCursorIndex < 0) {
             mCursorIndex = 0;
@@ -838,17 +834,16 @@ public class HighlightTextView extends View implements OnScrollListener {
         @Override
         public boolean onSingleTapUp(MotionEvent e) {
             // TODO: Implement this method
-            showSoftInput(true);
-
             float x = e.getX();
             float y = e.getY();
+            
+            showSoftInput(true);
 
             if(!hasSelectText || !checkSelectRegion(x, y)) {
                 // stop cursor blink
                 removeCallbacks(blinkAction);
                 showCursor = true;
-                showWaterDrop = true;
-                
+                showWaterDrop = true;                
                 hasSelectText = false;
 
                 setCursorPosition(x, y);
@@ -858,6 +853,7 @@ public class HighlightTextView extends View implements OnScrollListener {
                 // cursor start blink
                 postDelayed(blinkAction, 1000);
             } 
+            
             return super.onSingleTapUp(e);
         }
 
