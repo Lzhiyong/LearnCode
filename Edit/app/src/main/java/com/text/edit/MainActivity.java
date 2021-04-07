@@ -104,7 +104,6 @@ public class MainActivity extends AppCompatActivity {
 
         int lineCount = 0;
         int maxWidth = 0;
-        int maxWidthLine = 0;
 
         try {
             in = new FileInputStream(new File(pathname));
@@ -119,7 +118,6 @@ public class MainActivity extends AppCompatActivity {
                 width = (int)mTextView.getPaint().measureText(text);
                 if(width > maxWidth) {
                     maxWidth = width;
-                    maxWidthLine = lineCount;
                 }
                 buf.append(text + "\n");
                 indexList.add(buf.length());
@@ -141,7 +139,6 @@ public class MainActivity extends AppCompatActivity {
         mTextBuffer.setIndexList(indexList);
         mTextBuffer.setMaxWidth(maxWidth);
         mTextBuffer.setMaxHeight(lineCount * mTextBuffer.getLineHeight());
-        mTextBuffer.setMaxWidthLine(maxWidthLine);
 
         mTextView.setTextBuffer(mTextBuffer);
         mTextView.setCursorPosition(0, 0);

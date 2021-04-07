@@ -4,6 +4,7 @@ import android.text.TextPaint;
 import android.util.Log;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 
 public class TextBuffer implements Serializable {
 
@@ -15,8 +16,6 @@ public class TextBuffer implements Serializable {
 
     // maximum width of text line
     private int maxWidth, maxHeight;
-
-    private int maxWidthLine;
 
     // text content
     private StringBuilder strBuilder;
@@ -81,15 +80,7 @@ public class TextBuffer implements Serializable {
         return String.valueOf(getLineCount()).length() * getCharWidth('0');
     }
 
-
-    public void setMaxWidthLine(int line) {
-        maxWidthLine = line;
-    }
     
-    public int getMaxWidthLine(){
-        return maxWidthLine;
-    }
-
     public void setMaxWidth(int textWidth) {
         maxWidth = textWidth;
     }
@@ -172,7 +163,6 @@ public class TextBuffer implements Serializable {
         
         if(width > maxWidth) {
             maxWidth = width;
-            maxWidthLine = line;
         }
     }
     
@@ -214,8 +204,7 @@ public class TextBuffer implements Serializable {
         } 
 
         // calculation text max width
-        if(line != maxWidthLine)
-            resetMaxWidth(line);
+        resetMaxWidth(line);
         
         // calculation line start index
         for(int i=line; i < lineCount; ++i) {
@@ -227,13 +216,12 @@ public class TextBuffer implements Serializable {
         strBuilder.delete(start, end);
     }
     
-    class TextThread extends Thread {
+    class TextThread implements Callable {
 
         @Override
-        public void run() {
+        public Object call() throws Exception {
             // TODO: Implement this method
-            super.run();
-            
+            return null;
         }
     }
 }
