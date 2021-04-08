@@ -24,12 +24,12 @@ public class TextBuffer implements Serializable {
     private ArrayList<Integer> indexList;
 
     private TextPaint textPaint;
-    
+
     private final String TAG = this.getClass().getSimpleName();
 
     public TextBuffer(TextPaint textPaint) {
         this.textPaint = textPaint;
-        
+
         TextPaint.FontMetricsInt metrics = textPaint.getFontMetricsInt();
         lineHeight = metrics.bottom - metrics.top;
         Log.i(TAG, "line height: " + lineHeight);
@@ -55,8 +55,8 @@ public class TextBuffer implements Serializable {
             strBuilder.append(c);
         }
     }
-    
-    
+
+
     public int getLength() {
         return strBuilder.length();
     }
@@ -80,7 +80,7 @@ public class TextBuffer implements Serializable {
         return String.valueOf(getLineCount()).length() * getCharWidth('0');
     }
 
-    
+
     public void setMaxWidth(int textWidth) {
         maxWidth = textWidth;
     }
@@ -160,31 +160,31 @@ public class TextBuffer implements Serializable {
 
     private void resetMaxWidth(int line) {
         int width = getLineWidth(line);
-        
+
         if(width > maxWidth) {
             maxWidth = width;
         }
     }
-    
-    private void resetMaxHeight(){
+
+    private void resetMaxHeight() {
         maxHeight = lineCount * lineHeight;
     }
 
 
     // Insert text
     public synchronized void insert(int index, int line, char c) {
-        
+
         strBuilder.insert(index, c);
-        
+
         if(c == '\n') {
             ++lineCount;
             indexList.add(line, index);
             resetMaxHeight();
         }
-        
+
         // calculation text max width
         resetMaxWidth(line);
-        
+
         // calculation line start index
         for(int i=line; i < lineCount; ++i) {
             indexList.set(i, indexList.get(i) + 1);
@@ -196,7 +196,7 @@ public class TextBuffer implements Serializable {
 
         char c = strBuilder.charAt(index);
         strBuilder.deleteCharAt(index);
-        
+
         if(c == '\n') {
             --lineCount;
             indexList.remove(line);
@@ -205,7 +205,7 @@ public class TextBuffer implements Serializable {
 
         // calculation text max width
         resetMaxWidth(line);
-        
+
         // calculation line start index
         for(int i=line; i < lineCount; ++i) {
             indexList.set(i, indexList.get(i) - 1);
@@ -215,13 +215,22 @@ public class TextBuffer implements Serializable {
     public synchronized void delete(int start, int end, int line) {
         strBuilder.delete(start, end);
     }
-    
-    class TextThread implements Callable {
+
+    class TextTask implements Callable<Integer> {
 
         @Override
-        public Object call() throws Exception {
+        public Integer call() throws Exception {
             // TODO: Implement this method
-            return null;
+            int width = 0;
+            int textWidth = 0;
+            for(int i=1; i <= lineCount; ++i) {
+                textWidth = getLineWidth(i);
+                if(textWidth > width) {
+                    width = textWidth;
+                }
+            }
+
+            return width;
         }
     }
 }

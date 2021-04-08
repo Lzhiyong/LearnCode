@@ -46,7 +46,6 @@ public class HighlightTextView extends View implements OnScrollListener {
     private int mCursorWidth, mCursorHeight;
 
     private int waterDropWidth, waterDropHeight;
-    private int statusBarHeight, actionBarHeight;
     private int screenWidth, screenHeight;
 
     private int selectHandleWidth, selectHandleHeight;
@@ -95,8 +94,6 @@ public class HighlightTextView extends View implements OnScrollListener {
 
         screenWidth = ScreenUtils.getScreenWidth(context);
         screenHeight = ScreenUtils.getScreenHeight(context);
-        statusBarHeight = ScreenUtils.getStatusBarHeight(context);
-        actionBarHeight = ScreenUtils.getActionBarHeight(context);
 
         mDrawableCursorRes = context.getDrawable(R.drawable.abc_text_cursor_material);
         mDrawableCursorRes.setTint(Color.MAGENTA);
@@ -379,7 +376,7 @@ public class HighlightTextView extends View implements OnScrollListener {
 
         int startLine = Math.max(mScrollY / getLineHeight(), 1);
 
-        int endLine = Math.min((mScrollY + statusBarHeight + mScrollView.getHeight()) / getLineHeight(), getLineCount());
+        int endLine = Math.min((mScrollY + mScrollView.getHeight()) / getLineHeight() + 1, getLineCount());
 
         int lineNumWidth = getLineNumberWidth();
         
