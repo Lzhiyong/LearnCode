@@ -27,6 +27,7 @@ import java.util.TimerTask;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import androidx.core.graphics.drawable.DrawableCompat;
+import java.util.Collections;
 
 
 public class HighlightTextView extends View implements OnScrollListener {
@@ -140,11 +141,22 @@ public class HighlightTextView extends View implements OnScrollListener {
 
         requestFocus();
         setFocusable(true);
-
+test();
         postDelayed(blinkAction, 1000);
     }
 
 
+    public void test(){
+        String text = "helloworld\n"
+        +"test";
+        Log.i(TAG, "measure width: " + mTextPaint.measureText(text));
+        
+        Rect mTextRect = new Rect();
+        mTextPaint.getTextBounds(text, 0, text.length()-1, mTextRect);
+        Log.i(TAG, "bound width: " + mTextRect.right);
+    }
+    
+    
     // cursor blink
     private Runnable blinkAction = new Runnable() {
 
@@ -196,6 +208,15 @@ public class HighlightTextView extends View implements OnScrollListener {
         }
     }
     
+    // get width list max item
+    private int getTextWidth() {
+        return Collections.max(mTextBuffer.getWidthList());
+    }
+
+    private int getTextHeight() {
+        return getLineCount() * getLineHeight();
+    }
+    
     public int getLeftSpace() {
         return getPaddingLeft() + getLineNumberWidth() + SPACEING;
     }
@@ -207,21 +228,12 @@ public class HighlightTextView extends View implements OnScrollListener {
         return mTextBuffer.getLineCount();
     }
     
-    
     private int getLineHeight() {
         return mTextBuffer.getLineHeight();
     }
 
     private int getCharWidth(int index) {
         return mTextBuffer.getCharWidth(mTextBuffer.getCharAt(index));
-    }
-
-    private int getTextWidth() {
-        return mTextBuffer.getMaxWidth();
-    }
-
-    private int getTextHeight() {
-        return mTextBuffer.getMaxHeight();
     }
 
     private int getLineNumberWidth() {

@@ -98,29 +98,23 @@ public class MainActivity extends AppCompatActivity {
         InputStreamReader reader = null;
         BufferedReader br = null;
 
-        StringBuilder buf = new StringBuilder();
-        ArrayList<Integer> indexList = new ArrayList<>();
-        indexList.add(0);
-
+        StringBuilder buf = mTextBuffer.getBuffer();
         int lineCount = 0;
-        int maxWidth = 0;
 
         try {
             in = new FileInputStream(new File(pathname));
             reader = new InputStreamReader(in, "utf-8");
             br = new BufferedReader(reader);
-            String text = null;
-
+            
             int width = 0;
-
+            String text = null;
             while((text = br.readLine()) != null) {
                 ++lineCount;
-                width = (int)mTextView.getPaint().measureText(text);
-                if(width > maxWidth) {
-                    maxWidth = width;
-                }
                 buf.append(text + "\n");
-                indexList.add(buf.length());
+                mTextBuffer.getIndexList().add(buf.length());
+                
+                width = (int)mTextView.getPaint().measureText(text);
+                mTextBuffer.getWidthList().add(width);
             }
 
             in.close();
@@ -132,14 +126,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // remove the last item
-        indexList.remove(lineCount);
+        mTextBuffer.getIndexList().remove(lineCount);
 
-        mTextBuffer.setBuffer(buf);
+        //mTextBuffer.setBuffer(buf);
         mTextBuffer.setLineCount(lineCount);
-        mTextBuffer.setIndexList(indexList);
-        mTextBuffer.setMaxWidth(maxWidth);
-        mTextBuffer.setMaxHeight(lineCount * mTextBuffer.getLineHeight());
-
+        //mTextBuffer.setIndexList(indexList);
+//        mTextBuffer.setMaxWidth(maxWidth);
+//        mTextBuffer.setMaxHeight(lineCount * mTextBuffer.getLineHeight());
+//
         mTextView.setTextBuffer(mTextBuffer);
         mTextView.setCursorPosition(0, 0);
     }
