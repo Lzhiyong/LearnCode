@@ -141,22 +141,9 @@ public class HighlightTextView extends View implements OnScrollListener {
 
         requestFocus();
         setFocusable(true);
-test();
         postDelayed(blinkAction, 1000);
     }
 
-
-    public void test(){
-        String text = "helloworld\n"
-        +"test";
-        Log.i(TAG, "measure width: " + mTextPaint.measureText(text));
-        
-        Rect mTextRect = new Rect();
-        mTextPaint.getTextBounds(text, 0, text.length()-1, mTextRect);
-        Log.i(TAG, "bound width: " + mTextRect.right);
-    }
-    
-    
     // cursor blink
     private Runnable blinkAction = new Runnable() {
 
@@ -190,7 +177,7 @@ test();
     public TextPaint getPaint() {
         return mTextPaint;
     }
-    
+
     //
     public void setScrollView(TextScrollView scrollView, 
                               TextHorizontalScrollView horizontalScrollView) {
@@ -207,7 +194,7 @@ test();
             mHorizontalScrollView.setSmoothScrollingEnabled(true);
         }
     }
-    
+
     // get width list max item
     private int getTextWidth() {
         return Collections.max(mTextBuffer.getWidthList());
@@ -216,18 +203,18 @@ test();
     private int getTextHeight() {
         return getLineCount() * getLineHeight();
     }
-    
+
     public int getLeftSpace() {
         return getPaddingLeft() + getLineNumberWidth() + SPACEING;
     }
 
-    
+
     // ===========================================
     // TextBuffer method
     private int getLineCount() {
         return mTextBuffer.getLineCount();
     }
-    
+
     private int getLineHeight() {
         return mTextBuffer.getLineHeight();
     }
@@ -250,7 +237,7 @@ test();
 
     // ===========================================
 
-    
+
     @Override
     public void onScrollX(int scrollX, int oldX) {
         // TODO: Implement this method
@@ -275,7 +262,7 @@ test();
         return Math.max(screenHeight / 2, getTextHeight() + getLineHeight() * 2);
     }
 
-    
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 
@@ -290,9 +277,10 @@ test();
 
         if(!hasSelectText) {
             // draw current line background
-            canvas.drawRect(getLeftSpace(),
+            int left = getLeftSpace();
+            canvas.drawRect(left,
                             getPaddingTop() + mCursorPosY,
-                            getMaxScrollX(),
+                            Math.max(left + mTextWidth + spaceWidth * 4, screenWidth),
                             mCursorPosY + getLineHeight(),
                             mPaint
                             );
@@ -391,7 +379,7 @@ test();
         int endLine = Math.min((mScrollY + mScrollView.getHeight()) / getLineHeight() + 1, getLineCount());
 
         int lineNumWidth = getLineNumberWidth();
-        
+
         for(int i=startLine; i <= endLine; ++i) {
 
             int textX = getPaddingLeft();
@@ -408,7 +396,7 @@ test();
             // draw content text
             textX += (lineNumWidth + SPACEING);
             mTextPaint.setColor(Color.BLACK);
-            
+
             canvas.drawText(mTextBuffer.getLine(i), textX, textY, mTextPaint);
         }
     }
@@ -473,14 +461,20 @@ test();
 
     // when the text has changed, you need to re-layout
     public void onTextChanged() {
-        if(mTextWidth != getTextWidth() || mTextHeight < getTextHeight() 
-           || mCursorPosY - mScrollY <= 0 && mCursorPosY - mScrollY >= -getLineHeight()) {
+        int left = getLeftSpace();
+        int width = getTextWidth();
+        if((mTextWidth < width && left + width >=  screenWidth - spaceWidth * 2)
+           || (mCursorPosX == left && mTextHeight <= screenHeight / 2)
+           || (mTextHeight < getTextHeight())
+           || (mCursorPosY - mScrollY < 0 && mCursorPosY - mScrollY >= -getLineHeight())) {
+            // to re-layout
             requestLayout();
         } else {
             scrollToVisable(spaceWidth * 3, 0, spaceWidth * 2, getLineHeight());
         }
     }
 
+    
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         // TODO: Implement this method
@@ -683,7 +677,7 @@ test();
         return new TextInputConnection(this, true);
     }
 
-   
+
     // auto scroll select handle and cursor
     private void autoMove(int slopX, int slopY) {
         if(mCursorPosX - mScrollX <= slopX) {
@@ -717,7 +711,7 @@ test();
                 postDelayed(moveAction, 250);
             }
         };
-        
+
         // when on long press to select a word
         private void findNearestWord() {
             int left = getLeftSpace();
@@ -762,7 +756,7 @@ test();
                 }
             }
         }
-        
+
 
         // swap text select handle left and right
         private void swapSelection() {
@@ -782,7 +776,7 @@ test();
             touchOnSelectHandleLeft = !touchOnSelectHandleLeft;
             touchOnSelectHandleRight = !touchOnSelectHandleRight;
         }
-        
+
         private boolean checkSelectRegion(float x, float y) {
             if(x < selectHandleLeftX || x > selectHandleRightX
                || y < selectHandleLeftY - getLineHeight() || y > selectHandleRightY) {
@@ -845,7 +839,7 @@ test();
             // TODO: Implement this method
             float x = e.getX();
             float y = e.getY();
-            
+
             showSoftInput(true);
 
             if(!hasSelectText || !checkSelectRegion(x, y)) {
@@ -862,7 +856,7 @@ test();
                 // cursor start blink
                 postDelayed(blinkAction, 1000);
             } 
-            
+
             return super.onSingleTapUp(e);
         }
 

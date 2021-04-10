@@ -59,6 +59,8 @@ public class TextBuffer implements Serializable {
             }
             strBuilder.append(c);
         }
+        // remove the last index of '\n'
+        indexList.remove(lineCount);
     }
 
 
@@ -163,12 +165,12 @@ public class TextBuffer implements Serializable {
             // add current line
             indexList.add(line, index);
         } 
-        
+
         // calculation line start index
         for(int i=line; i < lineCount; ++i) {
             indexList.set(i, indexList.get(i) + 1);
         }
-        
+
         // calculation text line width
         if(c == '\n') 
             widthList.add(line, getLineWidth(line + 1));
@@ -194,12 +196,15 @@ public class TextBuffer implements Serializable {
         for(int i=line; i < lineCount; ++i) {
             indexList.set(i, indexList.get(i) - 1);
         }
-        
+
         // calculation text line width
         widthList.set(line - 1, getLineWidth(line));
     }
 
+
     public synchronized void delete(int start, int end, int line) {
-        strBuilder.delete(start, end);
+        for(int i=start; i <= end; ++i) {
+            delete(i, line);
+        }
     }
 }

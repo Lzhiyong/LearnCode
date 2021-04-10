@@ -94,20 +94,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void openFile(String pathname) {
-        FileInputStream in = null;
-        InputStreamReader reader = null;
+        FileInputStream fin = null;
+        InputStreamReader ins = null;
         BufferedReader br = null;
 
         StringBuilder buf = mTextBuffer.getBuffer();
+        String text = null;
+        int width = 0;
         int lineCount = 0;
-
+        
         try {
-            in = new FileInputStream(new File(pathname));
-            reader = new InputStreamReader(in, "utf-8");
-            br = new BufferedReader(reader);
+            fin = new FileInputStream(new File(pathname));
+            ins = new InputStreamReader(fin, "utf-8");
+            br = new BufferedReader(ins);
             
-            int width = 0;
-            String text = null;
             while((text = br.readLine()) != null) {
                 ++lineCount;
                 buf.append(text + "\n");
@@ -117,23 +117,17 @@ public class MainActivity extends AppCompatActivity {
                 mTextBuffer.getWidthList().add(width);
             }
 
-            in.close();
-            reader.close();
+            fin.close();
+            ins.close();
             br.close();
         } catch(Exception e) {
-            e.printStackTrace();
             Log.e(TAG, e.getMessage());
         }
 
-        // remove the last item
+        // remove the last index of '\n'
         mTextBuffer.getIndexList().remove(lineCount);
-
-        //mTextBuffer.setBuffer(buf);
         mTextBuffer.setLineCount(lineCount);
-        //mTextBuffer.setIndexList(indexList);
-//        mTextBuffer.setMaxWidth(maxWidth);
-//        mTextBuffer.setMaxHeight(lineCount * mTextBuffer.getLineHeight());
-//
+        
         mTextView.setTextBuffer(mTextBuffer);
         mTextView.setCursorPosition(0, 0);
     }
