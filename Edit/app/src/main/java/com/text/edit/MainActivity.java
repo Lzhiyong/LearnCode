@@ -1,13 +1,19 @@
 package com.text.edit;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import java.io.BufferedReader;
@@ -20,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
 
     private TextBuffer mTextBuffer;
 
+    private String externalPath = File.separator;
+
     private final String TAG = this.getClass().getSimpleName();
 
     @Override
@@ -29,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
         Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().hide();
+        //getSupportActionBar().hide();
 
 
         mTextView = findViewById(R.id.mTextView);
@@ -37,31 +45,21 @@ public class MainActivity extends AppCompatActivity {
 
         TextScrollView scrollView = findViewById(R.id.mScrollView);
         TextHorizontalScrollView horizontalScrollView = findViewById(R.id.mHorizontalScrollView);
-        
+
         mTextView.setScrollView(scrollView, horizontalScrollView);
-        
+
         mTextBuffer = new TextBuffer(mTextView.getPaint());
-        
+
         String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
         if(!hasPermission(permission)) {
             applyPermission(permission);
         }
 
-        String pathname = File.separator;
-
         if(Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            pathname = Environment.getExternalStorageDirectory().getAbsolutePath();
+            externalPath = Environment.getExternalStorageDirectory().getAbsolutePath();
         }
-
-        openFile(pathname + File.separator + "Download/books/doupo.txt");
-
-    }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        // TODO: Implement this method
-        super.onWindowFocusChanged(hasFocus);
+        openFile(externalPath + "/Download/books/doupo.txt");
     }
 
     public boolean hasPermission(String permission) {
@@ -76,9 +74,78 @@ public class MainActivity extends AppCompatActivity {
             if(shouldShowRequestPermissionRationale(permission)) {
                 Toast.makeText(this, "request read sdcard permmission", Toast.LENGTH_SHORT).show();
             }
-            requestPermissions(new String[] {permission},0);
+            requestPermissions(new String[] {permission}, 0);
         }
     }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        // TODO: Implement this method
+        super.onWindowFocusChanged(hasFocus);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        switch(item.getItemId()) {
+        case R.id.action_undo:
+            mTextView.undo();
+            break;
+        case R.id.action_redo:
+            mTextView.redo();
+            break;
+        case R.id.action_open:
+            openFile(externalPath + "/Download/books/doupo.txt");
+            break;
+        case R.id.action_gotoline:
+            showGotoLineDialog();
+            break;
+        case R.id.action_settings:
+            break;
+        case R.id.action_select_all:
+            mTextView.selectAll();
+            break;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
+    private void showGotoLineDialog() {
+
+        View v = getLayoutInflater().inflate(R.layout.dialog_gotoline, null);
+        final EditText mLineEdit = v.findViewById(R.id.mLineEdit);
+        mLineEdit.setHint("1.." + mTextBuffer.getLineCount());
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(v);
+        builder.setTitle("goto line");
+
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener(){
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String line = mLineEdit.getText().toString();
+                if(line != null && !line.equals("")) {
+                    mTextView.gotoLine(Integer.parseInt(line));
+                }
+            }
+        });
+        
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener(){
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.setCancelable(true).show();
+    }
+
 
     public void openFile(String pathname) {
         int lineCount = 0;
@@ -91,11 +158,11 @@ public class MainActivity extends AppCompatActivity {
                 ++lineCount;
                 buf.append(text + "\n");
                 mTextBuffer.getIndexList().add(buf.length());
-                
+
                 width = (int)mTextView.getPaint().measureText(text);
                 mTextBuffer.getWidthList().add(width);
             }
-            
+
             br.close();
         } catch(Exception e) {
             Log.e(TAG, e.getMessage());
@@ -104,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
         // remove the last index of '\n'
         mTextBuffer.getIndexList().remove(lineCount);
         mTextBuffer.setLineCount(lineCount);
-        
+
         mTextView.setTextBuffer(mTextBuffer);
         mTextView.setCursorPosition(0, 0);
     }

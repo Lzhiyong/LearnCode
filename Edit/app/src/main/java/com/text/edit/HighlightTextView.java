@@ -20,6 +20,9 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import java.util.Collections;
+import android.content.ClipboardManager;
+import android.content.ClipData;
+import android.content.ClipDescription;
 
 
 public class HighlightTextView extends View implements OnScrollListener {
@@ -57,6 +60,8 @@ public class HighlightTextView extends View implements OnScrollListener {
 
     private GestureDetector mGestureDetector;
     private GestureListener mGestureListener;
+
+    private ClipboardManager mClipboard;
 
     private long lastTapTime = 0L;
     private boolean showCursor = true;
@@ -124,6 +129,8 @@ public class HighlightTextView extends View implements OnScrollListener {
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaint.setColor(Color.GREEN);
         mPaint.setStrokeWidth(10);
+
+        mClipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
 
         spaceWidth = (int) mTextPaint.measureText(String.valueOf(' '));
         tabWidth = spaceWidth * 4;
@@ -507,7 +514,7 @@ public class HighlightTextView extends View implements OnScrollListener {
 
 
     // Insert char
-    public void insert(char c) {
+    private void insert(char c) {
         removeCallbacks(blinkAction);
         showCursor = true;
         showWaterDrop = false;
@@ -539,7 +546,7 @@ public class HighlightTextView extends View implements OnScrollListener {
     }
 
     // delete text
-    public void delete() {
+    private void delete() {
         removeCallbacks(blinkAction);
         showCursor = true;
         showWaterDrop = false;
@@ -578,16 +585,42 @@ public class HighlightTextView extends View implements OnScrollListener {
         postDelayed(blinkAction, 1000);
     }
 
-    public void copy() {
+    public void delete(int start, int end) {
+        for(mCursorIndex = end + 1; mCursorIndex > start; --mCursorIndex) {
+            // index needs to be incremented by 1
+            delete();
+        }
+    }
 
+    public void copy() {
+        if(hasSelectText) {
+            String text = getSelectText();
+            ClipData data = ClipData.newPlainText("content", text);
+            mClipboard.setPrimaryClip(data);
+        }
     }
 
     public void cut() {
-
+        copy();
+        delete(selectionStart, selectionEnd);
     }
 
     public void paste() {
-
+        if(mClipboard.hasPrimaryClip()) {
+            String text = null;
+            ClipDescription description = mClipboard.getPrimaryClipDescription();
+            
+            if(description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN)) {
+                ClipData data = mClipboard.getPrimaryClip();
+                ClipData.Item item = data.getItemAt(0);
+                text = item.getText().toString();
+            }
+            
+            if(hasSelectText) {
+                delete(selectionStart, selectionEnd);
+            }
+            insert(text);
+        }
     }
 
     public void find(String str) {
@@ -599,6 +632,10 @@ public class HighlightTextView extends View implements OnScrollListener {
     }
 
     public void selectAll() {
+        removeCallbacks(blinkAction);
+        showCursor = showWaterDrop = false;
+        hasSelectText = true;
+
         selectionStart = 0;
         selectionEnd = mTextBuffer.getLength() - 1;
 
@@ -613,7 +650,7 @@ public class HighlightTextView extends View implements OnScrollListener {
 
     public String getSelectText() {
         if(hasSelectText) {
-            return mTextBuffer.getBuffer().substring(selectionStart, selectionEnd);
+            return mTextBuffer.getText(selectionStart, selectionEnd);
         }
         return null;
     }
@@ -631,9 +668,16 @@ public class HighlightTextView extends View implements OnScrollListener {
         mCursorPosY = (line - 1) * getLineHeight();
 
         mHorizontalScrollView.smoothScrollTo(0, mScrollY);
-        mScrollView.smoothScrollTo(0, mCursorPosY);
+        mScrollView.smoothScrollTo(0, Math.max(mCursorPosY - screenHeight / 3, 0));
     }
 
+    public void redo() {
+
+    }
+
+    public void undo() {
+
+    }
 
     private void adjustCursorPositionX() {
         int start = getLineStart(mCursorLine);
@@ -661,7 +705,7 @@ public class HighlightTextView extends View implements OnScrollListener {
             mCursorPosY = bottom - getLineHeight();
 
         // estimate the cursor x position
-        int left = getPaddingLeft() + getLineNumberWidth() + SPACEING;
+        int left = getLeftSpace();
 
         int prev = left;
         int next = left;
@@ -787,8 +831,7 @@ public class HighlightTextView extends View implements OnScrollListener {
             ++selectionStart;
             if(selectionStart < selectionEnd) {
                 removeCallbacks(blinkAction);
-                showCursor = false;
-                showWaterDrop = false;
+                showCursor = showWaterDrop = false;
                 hasSelectText = true;
                 // select handle left (x y)
                 selectHandleLeftX = left + (int)mTextPaint.measureText(text.substring(0, selectionStart - start));
@@ -861,8 +904,7 @@ public class HighlightTextView extends View implements OnScrollListener {
 
                 touchOnSelectHandleMiddle = true;
                 removeCallbacks(blinkAction);
-                showCursor = true;
-                showWaterDrop = true;
+                showCursor = showWaterDrop = true;
             }
 
             // touch left water drop
@@ -872,8 +914,7 @@ public class HighlightTextView extends View implements OnScrollListener {
 
                 touchOnSelectHandleLeft = true;
                 removeCallbacks(blinkAction);
-                showCursor = false;
-                showWaterDrop = false;
+                showCursor = showWaterDrop = false;
             }
 
             // touch right water drop
@@ -883,8 +924,7 @@ public class HighlightTextView extends View implements OnScrollListener {
 
                 touchOnSelectHandleRight = true;
                 removeCallbacks(blinkAction);
-                showCursor = false;
-                showWaterDrop = false;
+                showCursor = showWaterDrop = false;
             }
 
             return super.onDown(e);
@@ -902,10 +942,9 @@ public class HighlightTextView extends View implements OnScrollListener {
             if(!hasSelectText || !checkSelectRegion(x, y)) {
                 // stop cursor blink
                 removeCallbacks(blinkAction);
-                showCursor = true;
-                showWaterDrop = true;                
-
+                showCursor = showWaterDrop = true;
                 hasSelectText = false;
+
                 setCursorPosition(x, y);
                 //Log.i(TAG, "mCursorIndex: " + mCursorIndex);
                 postInvalidate();

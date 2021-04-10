@@ -1,0 +1,45 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <item
+        android:id="@+id/action_undo"
+        android:orderInCategory="100"
+        android:title="undo"
+        android:icon="@drawable/ic_undo_selector"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_redo"
+        android:orderInCategory="200"
+        android:title="redo"
+        android:icon="@drawable/ic_redo_selector"
+        app:showAsAction="always" />
+
+
+    <item
+        android:id="@+id/action_open"
+        android:orderInCategory="300"
+        android:title="@string/action_open"
+        android:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_gotoline"
+        android:orderInCategory="400"
+        android:title="@string/action_gotoline"
+        android:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="500"
+        android:title="@string/action_settings"
+        android:showAsAction="never" />
+    
+    <item
+        android:id="@+id/action_select_all"
+        android:orderInCategory="500"
+        android:title="@string/action_select_all"
+        android:showAsAction="never" />
+
+</menu>
+

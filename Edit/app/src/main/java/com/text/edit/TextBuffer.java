@@ -62,6 +62,9 @@ public class TextBuffer implements Serializable {
         indexList.remove(lineCount);
     }
 
+    public String getText(int start, int end){
+        return strBuilder.substring(start, end);
+    }
 
     public int getLength() {
         return strBuilder.length();

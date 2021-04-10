@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Edit</string>
-    
+    <string name="action_open">open</string>
+    <string name="action_settings">setting</string>
+    <string name="action_gotoline">gotoline</string>
+    <string name="action_select_all">selectAll</string>
 </resources>
