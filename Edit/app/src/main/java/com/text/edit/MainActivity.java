@@ -1,31 +1,18 @@
 package com.text.edit;
 
+import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.util.Log;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import android.Manifest;
-import java.io.InputStream;
 import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.io.File;
-import android.os.Environment;
-import android.util.Log;
-import com.text.edit.R;
-import java.util.ArrayList;
-import android.util.TypedValue;
-import android.util.DisplayMetrics;
-import android.graphics.Rect;
-import java.lang.reflect.Field;
-import android.text.SpannedString;
-import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
-import android.graphics.Typeface;
-import android.view.KeyEvent;
-import android.view.MotionEvent;
+import org.mozilla.universalchardet.ReaderFactory;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -94,8 +81,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void openFile(String pathname) {
-        FileInputStream fin = null;
-        InputStreamReader ins = null;
         BufferedReader br = null;
 
         StringBuilder buf = mTextBuffer.getBuffer();
@@ -104,9 +89,7 @@ public class MainActivity extends AppCompatActivity {
         int lineCount = 0;
         
         try {
-            fin = new FileInputStream(new File(pathname));
-            ins = new InputStreamReader(fin, "utf-8");
-            br = new BufferedReader(ins);
+            br = ReaderFactory.createBufferedReader(new File(pathname));
             
             while((text = br.readLine()) != null) {
                 ++lineCount;
@@ -116,9 +99,7 @@ public class MainActivity extends AppCompatActivity {
                 width = (int)mTextView.getPaint().measureText(text);
                 mTextBuffer.getWidthList().add(width);
             }
-
-            fin.close();
-            ins.close();
+            
             br.close();
         } catch(Exception e) {
             Log.e(TAG, e.getMessage());
