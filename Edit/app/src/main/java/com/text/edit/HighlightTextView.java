@@ -120,7 +120,7 @@ public class HighlightTextView extends View implements OnScrollListener {
         //mGestureDetector.setIsLongpressEnabled(false);
 
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        setTextSize(35);
+        setTextSize(18);
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaint.setColor(Color.GREEN);
         mPaint.setStrokeWidth(10);
@@ -466,7 +466,7 @@ public class HighlightTextView extends View implements OnScrollListener {
         }
     }
 
-    
+
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         // TODO: Implement this method
@@ -671,7 +671,7 @@ public class HighlightTextView extends View implements OnScrollListener {
 
 
     // auto scroll select handle and cursor
-    private void autoMove(int slopX, int slopY) {
+    private void onMove(int slopX, int slopY) {
         if(mCursorPosX - mScrollX <= slopX) {
             // left scroll
             mHorizontalScrollView.scrollBy(-getCharWidth(mCursorIndex), 0);
@@ -699,7 +699,7 @@ public class HighlightTextView extends View implements OnScrollListener {
             @Override
             public void run() {
                 // TODO: Implement this method
-                autoMove(spaceWidth * 4, getLineHeight());
+                onMove(spaceWidth * 4, getLineHeight());
                 postDelayed(moveAction, 250);
             }
         };
@@ -860,13 +860,15 @@ public class HighlightTextView extends View implements OnScrollListener {
                 // 所以实际光标所在位置等于e2.getY()减去一些距离
                 removeCallbacks(moveAction);
                 post(moveAction);
-                setCursorPosition(e2.getX(), e2.getY() - getLineHeight() * 3 / 2);
+                setCursorPosition(e2.getX(), 
+                                  e2.getY() - getLineHeight() - Math.min(getLineHeight(), selectHandleHeight) / 2);
 
             } else if(touchOnSelectHandleLeft) {
                 removeCallbacks(moveAction);
                 post(moveAction);
                 // calculation select handle left coordinate and index
-                setCursorPosition(e2.getX(), e2.getY() - getLineHeight() * 3 / 2);
+                setCursorPosition(e2.getX(), 
+                                  e2.getY() - getLineHeight() - Math.min(getLineHeight(), selectHandleHeight) / 2);
                 selectHandleLeftX = mCursorPosX;
                 selectHandleLeftY = mCursorPosY + getLineHeight();
                 selectionStart = mCursorIndex;
@@ -875,7 +877,8 @@ public class HighlightTextView extends View implements OnScrollListener {
                 removeCallbacks(moveAction);
                 post(moveAction);
                 // calculation select handle right coordinate and index
-                setCursorPosition(e2.getX(), e2.getY() - getLineHeight() * 3 / 2);
+                setCursorPosition(e2.getX(), 
+                                  e2.getY() - getLineHeight() - Math.min(getLineHeight(), selectHandleHeight) / 2);
                 selectHandleRightX = mCursorPosX;
                 selectHandleRightY = mCursorPosY + getLineHeight();
                 selectionEnd = mCursorIndex;
