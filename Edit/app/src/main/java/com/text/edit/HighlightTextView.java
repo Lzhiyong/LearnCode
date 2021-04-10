@@ -578,6 +578,63 @@ public class HighlightTextView extends View implements OnScrollListener {
         postDelayed(blinkAction, 1000);
     }
 
+    public void copy() {
+
+    }
+
+    public void cut() {
+
+    }
+
+    public void paste() {
+
+    }
+
+    public void find(String str) {
+
+    }
+
+    public void replace(String str, String regex) {
+
+    }
+
+    public void selectAll() {
+        selectionStart = 0;
+        selectionEnd = mTextBuffer.getLength() - 1;
+
+        selectHandleLeftX = getLeftSpace();
+        selectHandleLeftY = getLineHeight();
+
+        selectHandleRightX = getLeftSpace() + getLineWidth(getLineCount());
+        selectHandleRightY = getLineCount() * getLineHeight();
+
+        postInvalidate();
+    }
+
+    public String getSelectText() {
+        if(hasSelectText) {
+            return mTextBuffer.getBuffer().substring(selectionStart, selectionEnd);
+        }
+        return null;
+    }
+
+    // goto line
+    public void gotoLine(int line) {
+        if(line < 1) line = 1;
+
+        if(line > getLineCount()) 
+            line = getLineCount();
+
+        mCursorIndex = getLineStart(line);
+        mCursorLine = line;
+        mCursorPosX = getLeftSpace();
+        mCursorPosY = (line - 1) * getLineHeight();
+
+        mHorizontalScrollView.smoothScrollTo(0, mScrollY);
+        mScrollView.smoothScrollTo(0, mCursorPosY);
+    }
+
+
     private void adjustCursorPositionX() {
         int start = getLineStart(mCursorLine);
 
@@ -728,24 +785,17 @@ public class HighlightTextView extends View implements OnScrollListener {
 
             // select start index need add
             ++selectionStart;
-            if(selectionStart <= selectionEnd) {
-                // get the select word
-                String selectWord = text.substring(selectionStart - start, selectionEnd - start);
-                //Log.i(TAG, "word:" + selectWord);
+            if(selectionStart < selectionEnd) {
+                removeCallbacks(blinkAction);
+                showCursor = false;
+                showWaterDrop = false;
+                hasSelectText = true;
+                // select handle left (x y)
+                selectHandleLeftX = left + (int)mTextPaint.measureText(text.substring(0, selectionStart - start));
 
-                if(selectWord != null && !selectWord.equals("")) {
-                    hasSelectText = true;
+                selectHandleRightX = left + (int)mTextPaint.measureText(text.substring(0, selectionEnd - start));
 
-                    removeCallbacks(blinkAction);
-                    showCursor = false;
-                    showWaterDrop = false;
-                    // select handle left (x y)
-                    selectHandleLeftX = left + (int)mTextPaint.measureText(text.substring(0, selectionStart - start));
-
-                    selectHandleRightX = left + (int)mTextPaint.measureText(text.substring(0, selectionEnd - start));
-
-                    selectHandleLeftY = selectHandleRightY = mCursorPosY + getLineHeight();
-                }
+                selectHandleLeftY = selectHandleRightY = mCursorPosY + getLineHeight();
             }
         }
 
@@ -769,20 +819,35 @@ public class HighlightTextView extends View implements OnScrollListener {
             touchOnSelectHandleRight = !touchOnSelectHandleRight;
         }
 
+        // when single tap to check the select region
         private boolean checkSelectRegion(float x, float y) {
-            if(x < selectHandleLeftX || x > selectHandleRightX
-               || y < selectHandleLeftY - getLineHeight() || y > selectHandleRightY) {
-                return false;       
+
+            if(y < selectHandleLeftY - getLineHeight() || y > selectHandleRightY)
+                return false;
+
+            // on the same line
+            if(selectHandleLeftY == selectHandleRightY) {
+                if(x < selectHandleLeftX || x > selectHandleRightX)
+                    return false;
             } else {
+                // not on the same line
                 int left = getLeftSpace();
                 int line = (int)y / getLineHeight() + 1;
-                int width = left + getLineWidth(line) + spaceWidth;
-                if(x >= left && x <= width) {
-                    return true;
+
+                if(line == selectHandleLeftY / getLineHeight()) {
+                    if(x < selectHandleLeftX)
+                        return false;
+                } else if(line == selectHandleRightY / getLineHeight()) {
+                    if(x > selectHandleRightX)
+                        return false;
+                } else {
+                    int width = left + getLineWidth(line) + spaceWidth;
+                    if(x < left || x > width) 
+                        return false;
                 }
             }
 
-            return false;
+            return true;
         }
 
         @Override
@@ -839,8 +904,8 @@ public class HighlightTextView extends View implements OnScrollListener {
                 removeCallbacks(blinkAction);
                 showCursor = true;
                 showWaterDrop = true;                
-                hasSelectText = false;
 
+                hasSelectText = false;
                 setCursorPosition(x, y);
                 //Log.i(TAG, "mCursorIndex: " + mCursorIndex);
                 postInvalidate();
@@ -855,9 +920,7 @@ public class HighlightTextView extends View implements OnScrollListener {
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
             if(touchOnSelectHandleMiddle) {
-                // Y = getY() - getLineHeight() - getLineHeight() / 2
-                // e2.getY()现在按下的位置要比光标所有位置大(按在水滴上)
-                // 所以实际光标所在位置等于e2.getY()减去一些距离
+                // calculation select handle middle coordinate and index
                 removeCallbacks(moveAction);
                 post(moveAction);
                 setCursorPosition(e2.getX(), 
