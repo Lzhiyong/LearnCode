@@ -81,16 +81,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void openFile(String pathname) {
-        BufferedReader br = null;
-
-        StringBuilder buf = mTextBuffer.getBuffer();
-        String text = null;
-        int width = 0;
         int lineCount = 0;
-        
+        int width = 0;  
         try {
-            br = ReaderFactory.createBufferedReader(new File(pathname));
-            
+            StringBuilder buf = mTextBuffer.getBuffer();
+            BufferedReader br = ReaderFactory.createBufferedReader(new File(pathname));
+            String text = null;
             while((text = br.readLine()) != null) {
                 ++lineCount;
                 buf.append(text + "\n");
