@@ -1,6 +1,7 @@
 package com.text.edit;
 
 import android.text.TextPaint;
+import android.util.Log;
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -31,6 +32,7 @@ public class TextBuffer implements Serializable {
 
         TextPaint.FontMetricsInt metrics = textPaint.getFontMetricsInt();
         lineHeight = metrics.bottom - metrics.top;
+        Log.i(TAG, "line height: " + lineHeight);
 
         indexList = new ArrayList<>();
         // add first index 0
@@ -62,7 +64,7 @@ public class TextBuffer implements Serializable {
         indexList.remove(lineCount);
     }
 
-    public String getText(int start, int end){
+    public String getText(int start, int end) {
         return strBuilder.substring(start, end);
     }
 
@@ -78,11 +80,34 @@ public class TextBuffer implements Serializable {
         return strBuilder.charAt(index);
     }
 
+    // Get char width
     public int getCharWidth(char c) {
         return (int)textPaint.measureText(String.valueOf(c));
     }
 
+    // Get cursor line by cursor index
+    public int getOffsetLine(int index) {
+        int low = 0;
+        int mid = 0;
+        int high = lineCount + 1;
 
+        while(high - low > 1) {
+            mid = (low + high) >> 1; 
+            // cursor index at mid line
+            if(mid == lineCount || index >= indexList.get(mid - 1) 
+               && index < indexList.get(mid))
+                break;
+            if(index < indexList.get(mid - 1))
+                high = mid;
+            else
+                low = mid;
+        }
+        
+        // find cursor line
+        return mid;
+    }
+    
+    
     public int getLineNumberWidth() {
         //(int)textPaint.measureText(String.valueOf(getLineCount()));
 

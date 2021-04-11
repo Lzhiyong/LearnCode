@@ -24,6 +24,10 @@ import android.content.ClipboardManager;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.util.Log;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.ArrayList;
+import androidx.core.util.Pair;
 
 
 public class HighlightTextView extends View implements OnScrollListener {
@@ -68,6 +72,7 @@ public class HighlightTextView extends View implements OnScrollListener {
     private boolean showCursor = true;
     private boolean showWaterDrop = false;
     private boolean hasSelectText = false;
+    private boolean isFindMode = false;
 
     private final int SPACEING = 100;
 
@@ -342,6 +347,37 @@ public class HighlightTextView extends View implements OnScrollListener {
         }
     }
 
+    // draw match text background
+    public void drawMatchText(Canvas canvas) {
+        if(isFindMode) {
+            int size = matchList.size();
+            int left = getLeftSpace();
+
+            for(int i=0; i < size; ++i) {
+                int start = (Integer) matchList.get(i).first;
+                int end = (Integer) matchList.get(i).second;
+                
+                if(start == selectionStart && end == selectionEnd)
+                    mPaint.setColor(Color.LTGRAY);
+                else
+                    mPaint.setColor(Color.CYAN);
+
+                int line = mTextBuffer.getOffsetLine(start);
+                int lineStart = getLineStart(line);
+
+                String text = mTextBuffer.getLine(line);
+
+                canvas.drawRect(left + mTextPaint.measureText(text.substring(0, start - lineStart)),
+                                (line - 1) * getLineHeight(),
+                                left + mTextPaint.measureText(text.substring(0, end - lineStart)),
+                                line * getLineHeight(),
+                                mPaint
+                                );
+            }
+        }
+    }
+
+
     // draw cursor
     public void drawCursor(Canvas canvas) {
         if(showCursor) {
@@ -413,6 +449,8 @@ public class HighlightTextView extends View implements OnScrollListener {
         }
 
         drawLineBackground(canvas);
+
+        drawMatchText(canvas);
 
         // draw content text
         drawEditableText(canvas);
@@ -592,12 +630,12 @@ public class HighlightTextView extends View implements OnScrollListener {
     }
 
     // delete char at index
-    public void delete(int index){
+    public void delete(int index) {
         mCursorIndex = index + 1;
         // delete char at cursor index
         delete();
     }
-    
+
     // delete text at index[start..end)
     public void delete(int start, int end) {
         // cursor index == end index
@@ -629,13 +667,13 @@ public class HighlightTextView extends View implements OnScrollListener {
         if(mClipboard.hasPrimaryClip()) {
             String text = null;
             ClipDescription description = mClipboard.getPrimaryClipDescription();
-            
+
             if(description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN)) {
                 ClipData data = mClipboard.getPrimaryClip();
                 ClipData.Item item = data.getItemAt(0);
                 text = item.getText().toString();
             }
-            
+
             if(hasSelectText) {
                 delete(selectionStart, selectionEnd);
                 hasSelectText = false;
@@ -644,14 +682,16 @@ public class HighlightTextView extends View implements OnScrollListener {
         }
     }
 
+    ArrayList<Pair> matchList = new ArrayList<>();
     // find text
-    public void find(String str) {
+    public void find(String regex) {
+        Matcher matcher = Pattern.compile(regex).matcher(mTextBuffer.getBuffer());
+        if(!matchList.isEmpty())
+            matchList.clear();
 
-    }
-
-    // replace text
-    public void replace(String str, String regex) {
-
+        while(matcher.find()) {
+            matchList.add(new Pair<Integer, Integer>(matcher.start(), matcher.end()));
+        }
     }
 
     public void selectAll() {
@@ -856,12 +896,19 @@ public class HighlightTextView extends View implements OnScrollListener {
                 removeCallbacks(blinkAction);
                 showCursor = showWaterDrop = false;
                 hasSelectText = true;
+
                 // select handle left (x y)
                 selectHandleLeftX = left + (int)mTextPaint.measureText(text.substring(0, selectionStart - start));
 
                 selectHandleRightX = left + (int)mTextPaint.measureText(text.substring(0, selectionEnd - start));
 
                 selectHandleLeftY = selectHandleRightY = mCursorPosY + getLineHeight();
+
+                mCursorLine = selectHandleLeftY / getLineHeight();
+                
+                String selectWord = mTextBuffer.getText(selectionStart, selectionEnd);
+                find(selectWord);
+                isFindMode = true;
             }
         }
 
@@ -968,6 +1015,10 @@ public class HighlightTextView extends View implements OnScrollListener {
                 removeCallbacks(blinkAction);
                 showCursor = showWaterDrop = true;
                 hasSelectText = false;
+                if(!matchList.isEmpty()) {
+                    matchList.clear();
+                    isFindMode = false;
+                }
 
                 setCursorPosition(x, y);
                 //Log.i(TAG, "mCursorIndex: " + mCursorIndex);
@@ -983,6 +1034,7 @@ public class HighlightTextView extends View implements OnScrollListener {
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
             if(touchOnSelectHandleMiddle) {
+                isFindMode = false;
                 // calculation select handle middle coordinate and index
                 removeCallbacks(moveAction);
                 post(moveAction);
@@ -990,6 +1042,7 @@ public class HighlightTextView extends View implements OnScrollListener {
                                   e2.getY() - getLineHeight() - Math.min(getLineHeight(), selectHandleHeight) / 2);
 
             } else if(touchOnSelectHandleLeft) {
+                isFindMode = false;
                 removeCallbacks(moveAction);
                 post(moveAction);
                 // calculation select handle left coordinate and index
@@ -1000,6 +1053,7 @@ public class HighlightTextView extends View implements OnScrollListener {
                 selectionStart = mCursorIndex;
 
             } else if(touchOnSelectHandleRight) {
+                isFindMode = false;
                 removeCallbacks(moveAction);
                 post(moveAction);
                 // calculation select handle right coordinate and index
