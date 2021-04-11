@@ -690,10 +690,11 @@ public class HighlightTextView extends View implements OnScrollListener {
     
     // find text
     public void find(String regex) {
-        Matcher matcher = Pattern.compile(regex).matcher(mTextBuffer.getBuffer());
         if(!matchList.isEmpty())
             matchList.clear();
-
+            
+        Matcher matcher = Pattern.compile(regex).matcher(mTextBuffer.getBuffer());
+        
         while(matcher.find()) {
             matchList.add(new Pair<Integer, Integer>(matcher.start(), matcher.end()));
         }
@@ -909,8 +910,6 @@ public class HighlightTextView extends View implements OnScrollListener {
 
                 selectHandleLeftY = selectHandleRightY = mCursorPosY + getLineHeight();
 
-                mCursorLine = selectHandleLeftY / getLineHeight();
-                
                 String selectWord = mTextBuffer.getText(selectionStart, selectionEnd);
                 find(selectWord);
                 isFindMode = true;
