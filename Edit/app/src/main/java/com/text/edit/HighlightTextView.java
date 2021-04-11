@@ -68,6 +68,8 @@ public class HighlightTextView extends View implements OnScrollListener {
 
     private ClipboardManager mClipboard;
 
+    private ArrayList<Pair> matchList;
+    
     private long lastTapTime = 0L;
     private boolean showCursor = true;
     private boolean showWaterDrop = false;
@@ -138,6 +140,8 @@ public class HighlightTextView extends View implements OnScrollListener {
 
         mClipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
 
+        matchList = new ArrayList<>();
+        
         spaceWidth = (int) mTextPaint.measureText(String.valueOf(' '));
         tabWidth = spaceWidth * 4;
 
@@ -682,7 +686,7 @@ public class HighlightTextView extends View implements OnScrollListener {
         }
     }
 
-    ArrayList<Pair> matchList = new ArrayList<>();
+    
     // find text
     public void find(String regex) {
         Matcher matcher = Pattern.compile(regex).matcher(mTextBuffer.getBuffer());
