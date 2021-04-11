@@ -669,20 +669,21 @@ public class HighlightTextView extends View implements OnScrollListener {
     // paste text
     public void paste() {
         if(mClipboard.hasPrimaryClip()) {
-            String text = null;
+            
             ClipDescription description = mClipboard.getPrimaryClipDescription();
 
             if(description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN)) {
                 ClipData data = mClipboard.getPrimaryClip();
                 ClipData.Item item = data.getItemAt(0);
-                text = item.getText().toString();
+                String text = item.getText().toString();
+                
+                if(hasSelectText) {
+                    delete(selectionStart, selectionEnd);
+                    hasSelectText = false;
+                }
+                
+                insert(text);
             }
-
-            if(hasSelectText) {
-                delete(selectionStart, selectionEnd);
-                hasSelectText = false;
-            }
-            insert(text);
         }
     }
 
