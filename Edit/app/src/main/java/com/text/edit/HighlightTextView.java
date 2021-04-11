@@ -586,6 +586,11 @@ public class HighlightTextView extends View implements OnScrollListener {
 
     // Insert text
     public void insert(String text) {
+        if(hasSelectText) {
+            delete(selectionStart, selectionEnd);
+            hasSelectText = false;
+        }
+            
         int length = text.length();
 
         for(int i=0; i < length; ++i) {
