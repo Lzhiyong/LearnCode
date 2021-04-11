@@ -23,6 +23,7 @@ import java.util.Collections;
 import android.content.ClipboardManager;
 import android.content.ClipData;
 import android.content.ClipDescription;
+import android.util.Log;
 
 
 public class HighlightTextView extends View implements OnScrollListener {
@@ -450,8 +451,13 @@ public class HighlightTextView extends View implements OnScrollListener {
                 insert('\n');
                 break;
             case KeyEvent.KEYCODE_DEL:
-                // delete text
-                delete();
+                if(!hasSelectText) {
+                    // delete char at cursor index
+                    delete();
+                } else {
+                    delete(selectionStart, selectionEnd);
+                    hasSelectText = false;
+                }
                 break;
             }
         }
@@ -585,26 +591,40 @@ public class HighlightTextView extends View implements OnScrollListener {
         postDelayed(blinkAction, 1000);
     }
 
+    // delete char at index
+    public void delete(int index){
+        mCursorIndex = index + 1;
+        // delete char at cursor index
+        delete();
+    }
+    
+    // delete text at index[start..end)
     public void delete(int start, int end) {
-        for(mCursorIndex = end + 1; mCursorIndex > start; --mCursorIndex) {
-            // index needs to be incremented by 1
+        // cursor index == end index
+        mCursorIndex = end;
+        for(int i=end; i > start; --i) {
+            // delete char at cursor index
             delete();
         }
     }
 
+    // copy text
     public void copy() {
-        if(hasSelectText) {
-            String text = getSelectText();
+        String text = getSelectText();
+        if(text != null && !text.equals("")) {
             ClipData data = ClipData.newPlainText("content", text);
             mClipboard.setPrimaryClip(data);
         }
     }
 
+    // cut text
     public void cut() {
         copy();
         delete(selectionStart, selectionEnd);
+        hasSelectText = false;
     }
 
+    // paste text
     public void paste() {
         if(mClipboard.hasPrimaryClip()) {
             String text = null;
@@ -618,15 +638,18 @@ public class HighlightTextView extends View implements OnScrollListener {
             
             if(hasSelectText) {
                 delete(selectionStart, selectionEnd);
+                hasSelectText = false;
             }
             insert(text);
         }
     }
 
+    // find text
     public void find(String str) {
 
     }
 
+    // replace text
     public void replace(String str, String regex) {
 
     }
@@ -827,7 +850,7 @@ public class HighlightTextView extends View implements OnScrollListener {
                     break;
             }
 
-            // select start index need add
+            // select start index needs to be incremented by 1
             ++selectionStart;
             if(selectionStart < selectionEnd) {
                 removeCallbacks(blinkAction);
@@ -876,16 +899,17 @@ public class HighlightTextView extends View implements OnScrollListener {
                 // not on the same line
                 int left = getLeftSpace();
                 int line = (int)y / getLineHeight() + 1;
-
+                int width = getLineWidth(line) + spaceWidth;
+                // select start line
                 if(line == selectHandleLeftY / getLineHeight()) {
-                    if(x < selectHandleLeftX)
+                    if(x < selectHandleLeftX || x > left + width)
                         return false;
                 } else if(line == selectHandleRightY / getLineHeight()) {
-                    if(x > selectHandleRightX)
+                    // select end line
+                    if(x < left || x > selectHandleRightX)
                         return false;
                 } else {
-                    int width = left + getLineWidth(line) + spaceWidth;
-                    if(x < left || x > width) 
+                    if(x < left || x > left + width) 
                         return false;
                 }
             }

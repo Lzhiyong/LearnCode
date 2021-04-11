@@ -100,6 +100,18 @@ public class MainActivity extends AppCompatActivity {
         case R.id.action_redo:
             mTextView.redo();
             break;
+        case R.id.action_copy:
+            mTextView.copy();
+            break;
+        case R.id.action_cut:
+            mTextView.cut();
+            break;
+        case R.id.action_paste:
+            mTextView.paste();
+            break;
+        case R.id.action_select_all:
+            mTextView.selectAll();
+            break;
         case R.id.action_open:
             openFile(externalPath + "/Download/books/doupo.txt");
             break;
@@ -107,9 +119,6 @@ public class MainActivity extends AppCompatActivity {
             showGotoLineDialog();
             break;
         case R.id.action_settings:
-            break;
-        case R.id.action_select_all:
-            mTextView.selectAll();
             break;
         }
 
