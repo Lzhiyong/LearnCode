@@ -619,7 +619,7 @@ public class HighlightTextView extends View implements OnScrollListener {
             insert(text.charAt(i));
         }
 
-        if(isNeedAction) {
+        if(isNeedAction && (insertText != null || deleteText != null)) {
             addAction(insertStart, insertEnd, 
                       deleteStart, deleteEnd, insertText, deleteText);
         }
@@ -689,13 +689,14 @@ public class HighlightTextView extends View implements OnScrollListener {
         } else {
             deleteStart = mCursorIndex - 1;
             deleteEnd = mCursorIndex;
-            deleteText = mTextBuffer.getText(mCursorIndex - 1, mCursorIndex);
+            if(mCursorIndex > 0)
+                deleteText = mTextBuffer.getText(mCursorIndex - 1, mCursorIndex);
             // start index == end index
             // delete char at cursor index
             delete();
         }
 
-        if(isNeedAction) 
+        if(isNeedAction && deleteText != null) 
             addAction(0, 0, deleteStart, deleteEnd, null, deleteText);
     }
 
@@ -1091,22 +1092,18 @@ public class HighlightTextView extends View implements OnScrollListener {
         };
 
         // when on long press to select a word
-        private void findNearestWord() {
-            int left = getLeftSpace();
-
-            String text = mTextBuffer.getLine(mCursorLine);
-            int start = getLineStart(mCursorLine);
-            int end = start + text.length() - 1;
-
+        private String findNearestWord() {
+            int length = mTextBuffer.getLength();
+            
             // select start index
-            for(selectionStart = mCursorIndex; selectionStart >= start; --selectionStart) {
+            for(selectionStart = mCursorIndex; selectionStart >= 0; --selectionStart) {
                 char c = mTextBuffer.getCharAt(selectionStart);
                 if(!Character.isJavaIdentifierPart(c))
                     break;
             }
 
             // select end index
-            for(selectionEnd = mCursorIndex; selectionEnd <= end; ++selectionEnd) {
+            for(selectionEnd = mCursorIndex; selectionEnd < length; ++selectionEnd) {
                 char c = mTextBuffer.getCharAt(selectionEnd);
                 if(!Character.isJavaIdentifierPart(c))
                     break;
@@ -1114,23 +1111,10 @@ public class HighlightTextView extends View implements OnScrollListener {
 
             // select start index needs to be incremented by 1
             ++selectionStart;
-
-            if(selectionStart < selectionEnd) {
-                removeCallbacks(blinkAction);
-                showCursor = showWaterDrop = false;
-                isSelectMode = true;
-                // select handle left (x y)
-                selectHandleLeftX = left + (int)mTextPaint.measureText(text.substring(0, selectionStart - start));
-                selectHandleRightX = left + (int)mTextPaint.measureText(text.substring(0, selectionEnd - start));
-                selectHandleLeftY = selectHandleRightY = mCursorPosY + getLineHeight();
-
-                // set cursor index and position
-                adjustCursorPosition(-1);
-
-                String selectWord = mTextBuffer.getText(selectionStart, selectionEnd);
-                // find select word
-                find(selectWord);
-            }
+            if(selectionStart < selectionEnd) 
+                return mTextBuffer.getText(selectionStart, selectionEnd);
+            
+            return null;
         }
 
 
@@ -1309,10 +1293,29 @@ public class HighlightTextView extends View implements OnScrollListener {
             super.onLongPress(e);
             if(!touchOnSelectHandleMiddle) {
                 setCursorPosition(e.getX(), e.getY());
-                findNearestWord();
+                
+                String selectWord = findNearestWord();
+                if(selectWord != null) {
+                    removeCallbacks(blinkAction);
+                    showCursor = showWaterDrop = false;
+                    isSelectMode = true;
+                    
+                    int left = getLeftSpace();
+                    int lineStart = getLineStart(mCursorLine);
+                    // select handle left (x y)
+                    selectHandleLeftX = left + getTextMeasureWidth(mTextBuffer.getText(lineStart, selectionStart));
+                    selectHandleRightX = left + getTextMeasureWidth(mTextBuffer.getText(lineStart, selectionEnd));
+                    selectHandleLeftY = selectHandleRightY = mCursorPosY + getLineHeight();
+
+                    // set cursor index and position
+                    adjustCursorPosition(-1);
+                    
+                    find(selectWord);
+                }
             } else {
                 onUp(e);
             }
+            
             postInvalidate();
         }
 
