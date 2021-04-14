@@ -7,4 +7,8 @@
     <string name="action_copy">copy</string>
     <string name="action_cut">cut</string>
     <string name="action_paste">paste</string>
+    <string name="action_replaceFirst">replaceFirst</string>
+    <string name="action_replaceAll">replaceAll</string>
+    <string name="action_find_prev">prev</string>
+    <string name="action_find_next">next</string>
 </resources>

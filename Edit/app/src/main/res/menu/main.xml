@@ -61,5 +61,28 @@
         android:title="@string/action_settings"
         android:showAsAction="never" />
     
+    <item
+        android:id="@+id/action_replaceFirst"
+        android:orderInCategory="1000"
+        android:title="@string/action_replaceFirst"
+        android:showAsAction="never" />
+    
+    <item
+        android:id="@+id/action_replaceAll"
+        android:orderInCategory="1100"
+        android:title="@string/action_replaceAll"
+        android:showAsAction="never" />
+    
+    <item
+        android:id="@+id/action_find_prev"
+        android:orderInCategory="1200"
+        android:title="@string/action_find_prev"
+        android:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_find_next"
+        android:orderInCategory="1300"
+        android:title="@string/action_find_next"
+        android:showAsAction="never" />
 </menu>
 

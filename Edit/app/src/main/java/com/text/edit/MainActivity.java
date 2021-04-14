@@ -120,6 +120,18 @@ public class MainActivity extends AppCompatActivity {
             break;
         case R.id.action_settings:
             break;
+        case R.id.action_replaceFirst:
+            mTextView.replaceFirst("haha");
+            break;
+        case R.id.action_replaceAll:
+            mTextView.replaceAll("haha");
+            break;
+        case R.id.action_find_prev:
+            mTextView.prev();
+            break;
+        case R.id.action_find_next:
+            mTextView.next();
+            break;
         }
 
         return super.onOptionsItemSelected(item);
