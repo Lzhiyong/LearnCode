@@ -1,14 +1,10 @@
 package com.text.edit;
 
-import android.text.TextPaint;
 import android.util.Log;
 import java.io.Serializable;
 import java.util.ArrayList;
 
 public class TextBuffer implements Serializable {
-
-    // the text line height
-    private int lineHeight;
 
     // the total count of lines of text
     private int lineCount;
@@ -16,29 +12,45 @@ public class TextBuffer implements Serializable {
     // text content
     private StringBuilder strBuilder;
 
-    // start index of each line of the text
+    // the start index of each line text
     private ArrayList<Integer> indexList;
 
+    // the width of each line text
     private ArrayList<Integer> widthList;
 
-    private TextPaint textPaint;
-
+    // modify an item from the width lists
+    public static final int OP_SET = 1; 
+    // add an item for the width lists
+    public static final int OP_ADD = 2;
+    // delete an item from the width lists
+    public static final int OP_DEL = 3;
+    
     private final String TAG = this.getClass().getSimpleName();
+    
 
-    public TextBuffer(TextPaint textPaint) {
+    public TextBuffer() {
         strBuilder = new StringBuilder();
-
-        this.textPaint = textPaint;
-
-        TextPaint.FontMetricsInt metrics = textPaint.getFontMetricsInt();
-        lineHeight = metrics.bottom - metrics.top;
-        Log.i(TAG, "line height: " + lineHeight);
 
         indexList = new ArrayList<>();
         // add first index 0
         indexList.add(0);
 
         widthList = new ArrayList<>();
+    }
+
+    public void setBuffer(String text) {
+        int length = text.length();
+        for(int i=0; i < length; ++i) {
+            char c = text.charAt(i);
+            if(c == '\n') {
+                ++lineCount;
+                indexList.add(i);
+            }
+            strBuilder.append(c);
+        }
+        Log.i(TAG, "line count: " + lineCount);
+        // remove the last index of '\n'
+        indexList.remove(lineCount);
     }
 
     public void setBuffer(StringBuilder strBuilder) {
@@ -49,71 +61,21 @@ public class TextBuffer implements Serializable {
         return strBuilder;
     }
 
-    public void setBuffer(String text) {
-
-        int length = text.length();
-        for(int i=0; i < length; ++i) {
-            char c = text.charAt(i);
-            if(c == '\n') {
-                ++lineCount;
-                indexList.add(i);
-            }
-            strBuilder.append(c);
-        }
-        // remove the last index of '\n'
-        indexList.remove(lineCount);
-    }
-
-    public String getText(int start, int end) {
-        return strBuilder.substring(start, end);
-    }
-
     public int getLength() {
         return strBuilder.length();
     }
 
-    public char getCharAt(int index) {
-        if(index < 0 || index > getLength() - 1) {
-            return '\0';
-        }
-
-        return strBuilder.charAt(index);
+    // Set the text line count
+    public void setLineCount(int lineCount) {
+        this.lineCount = lineCount;
     }
 
-    // Get char width
-    public int getCharWidth(char c) {
-        return (int)textPaint.measureText(String.valueOf(c));
+    // Get the text line count
+    public int getLineCount() {
+        return lineCount;
     }
 
-    // Get cursor line by cursor index
-    public int getOffsetLine(int index) {
-        int low = 0;
-        int mid = 0;
-        int high = lineCount + 1;
-
-        while(high - low > 1) {
-            mid = (low + high) >> 1; 
-            // cursor index at mid line
-            if(mid == lineCount || index >= indexList.get(mid - 1) 
-               && index < indexList.get(mid))
-                break;
-            if(index < indexList.get(mid - 1))
-                high = mid;
-            else
-                low = mid;
-        }
-
-        // find cursor line
-        return mid;
-    }
-
-    public int getLineNumberWidth() {
-        //(int)textPaint.measureText(String.valueOf(getLineCount()));
-
-        return String.valueOf(getLineCount()).length() * getCharWidth('0');
-    }
-
-    // Set the text line index list
+    // Set the text line index lists
     public void setIndexList(ArrayList<Integer> list) {
         indexList = list;
     }
@@ -122,12 +84,34 @@ public class TextBuffer implements Serializable {
         return indexList;
     }
 
+    // Set the text line width lists
     public void setWidthList(ArrayList<Integer> list) {
         widthList = list;
     }
 
     public ArrayList<Integer> getWidthList() {
         return widthList;
+    }
+
+    // Get cursor line by cursor index
+    public int getOffsetLine(int index) {
+        int low = 0;
+        int line = 0;
+        int high = lineCount + 1;
+
+        while(high - low > 1) {
+            line = (low + high) >> 1; 
+            // cursor index at mid line
+            if(line == lineCount || index >= indexList.get(line - 1) 
+               && index < indexList.get(line))
+                break;
+            if(index < indexList.get(line - 1))
+                high = line;
+            else
+                low = line;
+        }
+        // find the cursor line
+        return line;
     }
 
     // start index of the text line
@@ -142,76 +126,55 @@ public class TextBuffer implements Serializable {
         return start + length - 1;
     }
 
-    // get text line width by line num
-    public int getLineWidth(int line) {
-        return (int)textPaint.measureText(getLine(line));
+    public char getCharAt(int index) {
+        return strBuilder.charAt(index);
     }
 
     // get line text by index
     public String indexOfLineText(int start) {
         int end = start;
-        while(getCharAt(end) != '\n') {
+        while(getCharAt(end) != '\n'
+              && getCharAt(end) != '\uFFFF') {
             ++end;
         }
-
+        // line text index[start..end]
         return strBuilder.substring(start, end);
     }  
-
-    // get text line width by index
-    public int indexOfLineWidth(int start) {
-        String text = indexOfLineText(start);
-        return (int)textPaint.measureText(text);
-    } 
-
-
-    // Set the text line count
-    public void setLineCount(int lineCount) {
-        this.lineCount = lineCount;
-    }
-
-    // Get the text line count
-    public int getLineCount() {
-        return lineCount;
-    }
-
-    // Get the text line height
-    public int getLineHeight() {
-        return lineHeight;
-    }
 
     // Get a line of text
     public synchronized String getLine(int line) {
 
-        int startIndex = getLineStart(line);
-        int endIndex = startIndex;
+        int lineStart= getLineStart(line);
 
-        while(strBuilder.charAt(endIndex) != '\n'
-              && strBuilder.charAt(endIndex) != '\uFFFF') {
-            ++endIndex;
-        }
-
-        int length = getLength();
-        if(endIndex >= length) 
-            endIndex = length - 1;
-
-        return strBuilder.substring(startIndex, endIndex);
+        return indexOfLineText(lineStart);
     }
 
+    // get text by index[start..end]
+    public synchronized String getText(int start, int end) {
+        return strBuilder.substring(start, end);
+    }
 
-    // recalculate the lists
-    public void resetList(int line, int delta) {
+    // recalculate the width lists
+    public void resetWidthList(int line, int lineWidth, int option) {
+        if(option == OP_SET) {
+            widthList.set(line - 1, lineWidth);
+        } else if(option == OP_ADD) {
+            widthList.add(line - 1, lineWidth);
+        } else {
+            widthList.remove(line - 1);
+        }
+    }
+
+    // recalculate the index lists
+    public void resetIndexList(int line, int delta) {
         // calculation line start index
         for(int i=line; i < lineCount; ++i) {
             indexList.set(i, indexList.get(i) + delta);
         }
-
-        // calculation text line width
-        widthList.set(line - 1, getLineWidth(line));
     }
 
-
     // Insert char
-    public synchronized void insert(int index, int line, char c) {
+    public synchronized void insert(int index, char c, int line) {
         // insert char
         strBuilder.insert(index, c);
 
@@ -219,11 +182,10 @@ public class TextBuffer implements Serializable {
             ++lineCount;
             // add current line
             indexList.add(line, index);
-            widthList.add(line, indexOfLineWidth(index + 1));
         } 
 
         // recalculate the lists
-        resetList(line, 1);
+        resetIndexList(line, 1);
     }
 
 
@@ -237,28 +199,23 @@ public class TextBuffer implements Serializable {
             --lineCount;
             // remove current line
             indexList.remove(line);
-            widthList.remove(line);
         } 
 
         // recalculate the lists
-        resetList(line, -1);
+        resetIndexList(line, -1);
     }
 
     // delete text at index[start..end]
-    public synchronized void delete(int line, int start, int end) {
+    public synchronized void delete(int start, int end, int line) {
         for(int i=start; i <= end; ++i) {
             delete(i, line);
         }
     }
 
-    public synchronized void replace(int line, int start, int end, int delta, String replacement) {
+    public synchronized void replace(int line, int start, int end, 
+                                     int delta, String replacement) {
         strBuilder.replace(start, end, replacement);
-
-        //int length = replacement.length();
-        //int delta = start + length - end;
         // recalculate the lists
-        if(delta != 0) {
-            resetList(line, delta);
-        }
+        if(delta != 0) resetIndexList(line, delta);
     }
 }

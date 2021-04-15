@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
         mTextView.setScrollView(scrollView, horizontalScrollView);
 
-        mTextBuffer = new TextBuffer(mTextView.getPaint());
+        mTextBuffer = new TextBuffer();
 
         String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
