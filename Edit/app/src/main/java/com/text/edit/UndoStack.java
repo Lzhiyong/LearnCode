@@ -67,7 +67,7 @@ public class UndoStack {
 
     // record the insert and delete action
     static class Action {
-
+        
         // start and end index for insert text
         public int insertStart, insertEnd;
         // start and end index for delete text
@@ -76,14 +76,7 @@ public class UndoStack {
         // inserted and deleted text
         public String insertText, deleteText;
 
-        public boolean isSelectMode;
-
         // select text
         public int selectionStart, selectionEnd;
-
-        // select handle left
-        public int handleLeftX, handleLeftY;
-        // select handle right
-        public int handleRightX, handleRightY;
     }
 }
