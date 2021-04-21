@@ -211,8 +211,10 @@ public class TextBuffer implements Serializable {
     // replace text
     public synchronized void replace(int start, int end, 
                                      String replacement, int line, int delta) {
-
-        if(!replacement.contains("\n")) {                             
+        if(replacement.contains("\n")) {                             
+            strBuilder.delete(start, end);
+            insert(start, replacement, line);
+        } else {
             strBuilder.replace(start, end, replacement);
             // recalculate the lists
             if(delta != 0) {
@@ -220,9 +222,6 @@ public class TextBuffer implements Serializable {
                     indexList.set(i, indexList.get(i) + delta);
                 }
             }
-        } else {
-            strBuilder.delete(start, end);
-            insert(start, replacement, line);
         }
     }
 }
