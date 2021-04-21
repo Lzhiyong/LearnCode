@@ -3,6 +3,7 @@ package com.text.edit;
 import android.util.Log;
 import java.io.Serializable;
 import java.util.ArrayList;
+import android.net.wifi.aware.PublishDiscoverySession;
 
 public class TextBuffer implements Serializable {
 
@@ -18,15 +19,8 @@ public class TextBuffer implements Serializable {
     // the width of each line text
     private ArrayList<Integer> widthList;
 
-    // modify an item from the width lists
-    public static final int OP_SET = 1; 
-    // add an item for the width lists
-    public static final int OP_ADD = 2;
-    // delete an item from the width lists
-    public static final int OP_DEL = 3;
-    
     private final String TAG = this.getClass().getSimpleName();
-    
+
 
     public TextBuffer() {
         strBuilder = new StringBuilder();
@@ -44,7 +38,7 @@ public class TextBuffer implements Serializable {
             char c = text.charAt(i);
             if(c == '\n') {
                 ++lineCount;
-                indexList.add(i);
+                indexList.add(i + 1);
             }
             strBuilder.append(c);
         }
@@ -154,68 +148,82 @@ public class TextBuffer implements Serializable {
         return strBuilder.substring(start, end);
     }
 
-    // recalculate the width lists
-    public void resetWidthList(int line, int lineWidth, int option) {
-        if(option == OP_SET) {
-            widthList.set(line - 1, lineWidth);
-        } else if(option == OP_ADD) {
-            widthList.add(line - 1, lineWidth);
-        } else {
-            widthList.remove(line - 1);
-        }
-    }
 
-    // recalculate the index lists
-    public void resetIndexList(int line, int delta) {
-        // calculation line start index
+    // insert text
+    public synchronized void insert(int index, String s, int line) {
+        // real insert text
+        strBuilder.insert(index, s);
+
+        int lineStart = getLineStart(line);
+        int length = s.length();
+
+        // calculate the line width
+        String text = indexOfLineText(lineStart);
+        int lineWidth = HighlightTextView.getTextMeasureWidth(text);
+        widthList.set(line - 1, lineWidth);
+
+        for(int i=index; i < index + length; ++i) {
+            if(strBuilder.charAt(i) == '\n') {
+                lineStart = i + 1;
+                text = indexOfLineText(lineStart);
+                lineWidth = HighlightTextView.getTextMeasureWidth(text);
+
+                indexList.add(line, lineStart);
+                widthList.add(line, lineWidth);
+
+                ++lineCount;
+                ++line;
+            }
+        }
+
+        // calculation the line start index
         for(int i=line; i < lineCount; ++i) {
-            indexList.set(i, indexList.get(i) + delta);
+            indexList.set(i, indexList.get(i) + length);
         }
     }
 
-    // Insert char
-    public synchronized void insert(int index, char c, int line) {
-        // insert char
-        strBuilder.insert(index, c);
-String s;
-        if(c == '\n') {
-            ++lineCount;
-            // add current line
-            indexList.add(line, index);
-        } 
+    // Delete text
+    public synchronized void delete(int start, int end, int line) {   
+        int length = end - start;
 
-        // recalculate the lists
-        resetIndexList(line, 1);
-    }
-
-
-    // Delete char
-    public synchronized void delete(int index, int line) {
-        // delete char
-        char c = strBuilder.charAt(index);
-        strBuilder.deleteCharAt(index);
-
-        if(c == '\n') {
-            --lineCount;
-            // remove current line
-            indexList.remove(line);
-        } 
-
-        // recalculate the lists
-        resetIndexList(line, -1);
-    }
-
-    // delete text at index[start..end]
-    public synchronized void delete(int start, int end, int line) {
-        for(int i=start; i <= end; ++i) {
-            delete(i, line);
+        for(int i=start; i < end; ++i) {
+            if(strBuilder.charAt(i) == '\n') {
+                indexList.remove(line - 1);
+                widthList.remove(line - 1);
+                --lineCount;
+                --line;
+            }
         }
+
+        // calculation the line start index
+        for(int i=line; i < lineCount; ++i) {
+            indexList.set(i, indexList.get(i) - length);
+        }
+
+        // real delete text
+        strBuilder.delete(start, end);
+
+        // calculate the line width
+        String text = getLine(line);
+        int lineWidth = HighlightTextView.getTextMeasureWidth(text);
+        widthList.set(line - 1, lineWidth);
     }
 
+    // replace text
     public synchronized void replace(int start, int end, 
                                      String replacement, int line, int delta) {
-        strBuilder.replace(start, end, replacement);
-        // recalculate the lists
-        if(delta != 0) resetIndexList(line, delta);
+
+        if(!replacement.contains("\n")) {                             
+            strBuilder.replace(start, end, replacement);
+            // recalculate the lists
+            if(delta != 0) {
+                for(int i=line; i < lineCount; ++i) {
+                    indexList.set(i, indexList.get(i) + delta);
+                }
+            }
+        } else {
+            strBuilder.delete(start, end);
+            insert(start, replacement, line);
+        }
     }
 }
