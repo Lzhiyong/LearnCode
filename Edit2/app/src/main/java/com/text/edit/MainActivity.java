@@ -56,10 +56,10 @@ public class MainActivity extends AppCompatActivity {
         }
         
         mTextView.post(new Runnable(){
-
                 @Override
                 public void run() {
                     // TODO: Implement this method
+                    //mTextView.setClipRect(null);
                 }
         });
         

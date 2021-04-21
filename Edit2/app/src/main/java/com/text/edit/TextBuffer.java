@@ -153,9 +153,9 @@ public class TextBuffer implements Serializable {
         // real insert text
         strBuilder.insert(index, s);
 
-        int lineStart = getLineStart(line);
         int length = s.length();
-
+        int lineStart = getLineStart(line);
+        
         // calculate the line width
         String text = indexOfLineText(lineStart);
         int lineWidth = HighlightTextView.getTextMeasureWidth(text);
@@ -193,7 +193,7 @@ public class TextBuffer implements Serializable {
                 --line;
             }
         }
-
+        
         // calculation the line start index
         for(int i=line; i < lineCount; ++i) {
             indexList.set(i, indexList.get(i) - length);
