@@ -3,7 +3,6 @@ package com.text.edit;
 import android.util.Log;
 import java.io.Serializable;
 import java.util.ArrayList;
-import android.net.wifi.aware.PublishDiscoverySession;
 
 public class TextBuffer implements Serializable {
 
