@@ -79,6 +79,8 @@ public class HighlightTextView extends View {
     private long mLastTapTime;
     // left margin for draw text
     private final int SPACEING = 100;
+    // animation duration 250ms
+    private final int DEFAULT_DURATION = 250;
     // cursor blink BLINK_TIMEOUT 500ms
     private final int BLINK_TIMEOUT = 500;
 
@@ -286,7 +288,7 @@ public class HighlightTextView extends View {
             return;
         }
         long duration = AnimationUtils.currentAnimationTimeMillis() - mLastScroll;
-        if(duration > BLINK_TIMEOUT / 2) {
+        if(duration > DEFAULT_DURATION) {
             mScroller.startScroll(getScrollX(), getScrollY(), dx, dy);
             postInvalidateOnAnimation();
         } else {
@@ -567,7 +569,6 @@ public class HighlightTextView extends View {
         scrollToVisable();
     }
 
-
     // when insert or delete text scroll to visable
     private void scrollToVisable() {
         // horizontal direction
@@ -586,7 +587,6 @@ public class HighlightTextView extends View {
 
         smoothScrollBy(dx, dy);
     }
-
 
     // Insert text
     private String insert(String s, UndoStack.Action action) {
@@ -792,9 +792,10 @@ public class HighlightTextView extends View {
                 mReplaceList.set(i, new Pair<Integer, Integer>(first, second));
             }
         } else {
+            // if the replace Lists is empty
+            // set the select mode false
             isSelectMode = false;
         }
-
         postInvalidate();
     }
 
@@ -880,7 +881,6 @@ public class HighlightTextView extends View {
         }
     }
 
-
     // for find match text
     // set the select handle left and right
     public void adjustSelectHandle(int start, int end) {
@@ -906,7 +906,6 @@ public class HighlightTextView extends View {
         selectionStart = start;
         selectionEnd = end;
     }
-
 
     // adjust the cursor coordinate for insert and delete text
     private void adjustCursorPosition(int index, int line) {
@@ -1001,7 +1000,6 @@ public class HighlightTextView extends View {
             imm.hideSoftInputFromWindow(getWindowToken(), 0);
     }
 
-
     @Override
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
         // TODO: Implement this method
@@ -1014,7 +1012,6 @@ public class HighlightTextView extends View {
 
         return new TextInputConnection(this, true);
     }
-
 
     // auto scroll select handle and cursor
     private void onMove(int slopX, int slopY) {
@@ -1062,7 +1059,7 @@ public class HighlightTextView extends View {
             public void run() {
                 // TODO: Implement this method
                 onMove(spaceWidth * 4, getLineHeight());
-                postDelayed(moveAction, BLINK_TIMEOUT / 2);
+                postDelayed(moveAction, DEFAULT_DURATION);
             }
         };
 

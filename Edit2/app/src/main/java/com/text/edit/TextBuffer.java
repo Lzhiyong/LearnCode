@@ -107,6 +107,10 @@ public class TextBuffer implements Serializable {
         return line;
     }
 
+    public int getLineWidth(int line){
+        return widthList.get(line - 1);
+    }
+    
     // start index of the text line
     public int getLineStart(int line) {
         return indexList.get(line - 1);
