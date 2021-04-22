@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 public class TextBuffer implements Serializable {
 
-    // text content
+    // save the text content
     private StringBuilder strBuilder = new StringBuilder();
 
     // the start index of each line text
@@ -14,43 +14,69 @@ public class TextBuffer implements Serializable {
 
     // the width of each line text
     private ArrayList<Integer> widthList = new ArrayList<>();
-
+    
+    // load text dynamically if the text content is too large
+    // implement a loading progress bar
+    public static int tempLineCount = 0;
+    public static int tempLineWidth = 0;
+    
+    // the text read finish
+    public static boolean onReadFinish = false;
+    // the text write finish
+    public static boolean onWriteFinish = false;
+    
     private final String TAG = this.getClass().getSimpleName();
-
+    
+    
     public TextBuffer() {
-        // add first index 0
-        indexList.add(0);
+        // nothing to do
     }
 
     public TextBuffer(CharSequence c) {
-        this();
         setBuffer(c);
     }
 
     public void setBuffer(CharSequence c) {
+        emptyBuffer();
         // add a dafault new line
         strBuilder.append(c + "\n");
-        int lineCount = 0;
+        // add first index 0
+        indexList.add(0);
+        
         for(int i=0; i < getLength(); ++i) {
             char ch = getCharAt(i);
             if(ch == '\n') {
-                ++lineCount;
-                int width = HighlightTextView.getTextMeasureWidth(getLine(lineCount));
-                widthList.add(lineCount - 1, width);
+                ++tempLineCount;
+                String text = getLine(tempLineCount);
+                int width = HighlightTextView.getTextMeasureWidth(text);
+                widthList.add(tempLineCount - 1, width);
                 indexList.add(i + 1);
             }
         }
         // remove the last index of '\n'
         indexList.remove(indexList.size() - 1);
         Log.i(TAG, "size: " + indexList.size());
+        onReadFinish = true;
     }
 
     public void setBuffer(StringBuilder strBuilder) {
+        emptyBuffer();
         this.strBuilder = strBuilder;
     }
 
     public StringBuilder getBuffer() {
         return strBuilder;
+    }
+
+    // empty the string builder
+    public void emptyBuffer() {
+        if(strBuilder.length() > 0) {
+            indexList.clear();
+            widthList.clear();
+            strBuilder.delete(0, strBuilder.length());
+            onReadFinish = onWriteFinish = false;
+            tempLineCount = tempLineWidth = 0;
+        }
     }
 
     public int getLength() {
@@ -80,7 +106,7 @@ public class TextBuffer implements Serializable {
         return widthList;
     }
 
-    // Get cursor line by cursor index
+    // find the line where the cursor is by binary search
     public int getOffsetLine(int index) {
         int low = 0;
         int line = 0;
@@ -166,7 +192,6 @@ public class TextBuffer implements Serializable {
 
                 indexList.add(line, lineStart);
                 widthList.add(line, lineWidth);
-                //++tempLineCount;
                 ++line;
             }
         }
@@ -177,7 +202,7 @@ public class TextBuffer implements Serializable {
         }
     }
 
-    // Delete text
+    // delete text
     public synchronized void delete(int start, int end, int line) {   
         int length = end - start;
 
@@ -185,7 +210,6 @@ public class TextBuffer implements Serializable {
             if(strBuilder.charAt(i) == '\n') {
                 indexList.remove(line - 1);
                 widthList.remove(line - 1);
-                //--tempLineCount;
                 --line;
             }
         }
@@ -207,10 +231,13 @@ public class TextBuffer implements Serializable {
     // replace text
     public synchronized void replace(int start, int end, 
                                      String replacement, int line, int delta) {
-        if(replacement.contains("\n")) {                             
+        if(replacement.contains("\n")) {
+            // the lists needs add new line
+            // replace = delete + insert
             strBuilder.delete(start, end);
             insert(start, replacement, line);
         } else {
+            // real replace
             strBuilder.replace(start, end, replacement);
             // recalculate the lists
             if(delta != 0) {

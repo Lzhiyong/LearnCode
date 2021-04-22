@@ -16,7 +16,17 @@
 			android:layout_width="match_parent"
 			android:layout_height="?attr/actionBarSize"
 		    app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
-
+        
+        <ProgressBar
+            android:id="@+id/indeterminateBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:indeterminateOnly="true" 
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-7dp"
+            android:layout_marginBottom="-7dp"
+            android:layout_gravity="bottom"
+            android:visibility="gone"/>
 	</com.google.android.material.appbar.AppBarLayout>
 
     <com.text.edit.HighlightTextView
@@ -25,6 +35,5 @@
         android:layout_height="match_parent"
         android:focusable="true"
         android:focusableInTouchMode="true"/>
-
 </LinearLayout>
 

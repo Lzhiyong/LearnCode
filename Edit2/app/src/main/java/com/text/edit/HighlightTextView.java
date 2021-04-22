@@ -72,6 +72,7 @@ public class HighlightTextView extends View {
 
     private boolean mCursorVisiable = true;
     private boolean mHandleMiddleVisable = false;
+    private boolean isEditedMode = true;
     private boolean isSelectMode = false;
 
     private long mLastScroll;
@@ -136,7 +137,7 @@ public class HighlightTextView extends View {
         mGestureDetector = new GestureDetector(context, mGestureListener);
         //mGestureDetector.setIsLongpressEnabled(false);
         mScaleGestureDetector = new ScaleGestureDetector(context, new ScaleGestureListener());
-        
+
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
         setTextSize(ScreenUtils.dip2px(context, 18));
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -149,7 +150,10 @@ public class HighlightTextView extends View {
         mReplaceList = new ArrayList<>();
 
         spaceWidth = (int) mTextPaint.measureText(String.valueOf(' '));
-        
+
+        mCursorPosX = getPaddingLeft() + SPACEING;
+        mCursorPosY = 0;
+
         requestFocus();
         setFocusable(true);
         postDelayed(blinkAction, BLINK_TIMEOUT);
@@ -162,7 +166,7 @@ public class HighlightTextView extends View {
             // TODO: Implement this method
             mCursorVisiable = !mCursorVisiable;
             postDelayed(blinkAction, BLINK_TIMEOUT);
-            
+
             if(System.currentTimeMillis() - mLastTapTime >= 5 * BLINK_TIMEOUT) {
                 mHandleMiddleVisable = false;
             }
@@ -172,16 +176,16 @@ public class HighlightTextView extends View {
 
     public void setTextBuffer(TextBuffer textBuffer) {
         mTextBuffer = textBuffer;
-        setCursorPosition(0);
+        //setCursorPosition(0);
         postInvalidate();
     }
 
-    public void setText(CharSequence c){
+    public void setText(CharSequence c) {
         mTextBuffer = new TextBuffer(c);
         setCursorPosition(0);
         postInvalidate();
     }
-    
+
     // the text size unit is px
     public void setTextSize(float px) {
         // min text size 10dp
@@ -209,10 +213,14 @@ public class HighlightTextView extends View {
         }
     }
 
+    public void setEditedMode(boolean editMode) {
+        isEditedMode = editMode;
+    }
+    
     public void setTypeface(Typeface typeface) {
         mTextPaint.setTypeface(typeface);
     }
-    
+
     public TextPaint getPaint() {
         return mTextPaint;
     }
@@ -234,7 +242,7 @@ public class HighlightTextView extends View {
     }
 
     private int getLineCount() {
-        return mTextBuffer.getLineCount();
+        return mTextBuffer.onReadFinish ? mTextBuffer.getLineCount() : mTextBuffer.getLineCount() - 1;
     }
 
     private int getCharWidth(char c) {
@@ -246,7 +254,9 @@ public class HighlightTextView extends View {
     }
 
     private int getLineNumberWidth(int line) {
-        return String.valueOf(line).length() * getCharWidth('0');
+        return mTextBuffer.onReadFinish ? 
+            String.valueOf(line).length() * getCharWidth('0'):
+            String.valueOf(mTextBuffer.tempLineCount).length() * getCharWidth('0');
     }
 
     private int getLineStart(int line) {
@@ -259,7 +269,8 @@ public class HighlightTextView extends View {
 
     // get the max width of text
     private int getTextWidth() {
-        return Collections.max(mTextBuffer.getWidthList());
+        return mTextBuffer.onReadFinish ? 
+            Collections.max(mTextBuffer.getWidthList()): mTextBuffer.tempLineWidth;
     }
 
     // get the max height of text
@@ -438,6 +449,8 @@ public class HighlightTextView extends View {
             int half = 0;
             if(mCursorPosX >= left) {
                 half = mCursorWidth / 2;
+            } else {
+                mCursorPosX = left;
             }
 
             // draw text cursor 
@@ -467,8 +480,10 @@ public class HighlightTextView extends View {
 
         int endLine = Math.min(canvas.getClipBounds().bottom / getLineHeight() + 1, getLineCount());
 
-        int lineNumWidth = lineNumWidth = getLineNumberWidth(getLineCount());
-        
+        // the text line width
+        int lineNumWidth = getLineNumberWidth(getLineCount());
+
+        // draw text line[start..end]
         for(int i=startLine; i <= endLine; ++i) {
 
             int textX = getPaddingLeft();
@@ -494,6 +509,8 @@ public class HighlightTextView extends View {
     protected void onDraw(Canvas canvas) {
         // TODO: Implement this method
         super.onDraw(canvas);
+        // nothing to do
+        if(getLineCount() <= 0) return;
 
         canvas.save();
 
@@ -528,6 +545,11 @@ public class HighlightTextView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         // TODO: Implement this method
+        if(getLineCount() <= 0) {
+            // nothing to do
+            return false;
+        }
+
         switch(event.getAction()) {
         case MotionEvent.ACTION_DOWN:
             mScroller.abortAnimation();
@@ -589,7 +611,10 @@ public class HighlightTextView extends View {
     }
 
     // Insert text
-    private String insert(CharSequence c, UndoStack.Action action) {
+    private void insert(CharSequence c, UndoStack.Action action) {
+        // nothing to do
+        if(!isEditedMode) return;
+        
         removeCallbacks(blinkAction);
         mCursorVisiable = true;
         mHandleMiddleVisable = false;
@@ -600,7 +625,7 @@ public class HighlightTextView extends View {
 
         if(isSelectMode) {
             // no need to add action
-            deleteText = delete(selectionStart, selectionEnd, null);
+            deleteText = mTextBuffer.getText(selectionStart, selectionEnd);
             if(action != null) {
                 action.deleteStart = selectionStart;
                 action.deleteEnd = selectionEnd;
@@ -627,11 +652,13 @@ public class HighlightTextView extends View {
         scrollToVisable();
         postInvalidate();
         postDelayed(blinkAction, BLINK_TIMEOUT);
-        return insertText;
     }
 
     // Delete text
-    private String delete(int start, int end, UndoStack.Action action) {
+    private void delete(int start, int end, UndoStack.Action action) {
+        // nothing to do
+        if(!isEditedMode) return;
+        
         removeCallbacks(blinkAction);
         mCursorVisiable = true;
         mHandleMiddleVisable = false;
@@ -646,7 +673,7 @@ public class HighlightTextView extends View {
         if(start < 0) {
             mCursorIndex = 0;
             postDelayed(blinkAction, BLINK_TIMEOUT);
-            return null; // nothing to do
+            return; // nothing to do
         } else if(start == end && end > 0) {
             start = end - 1;
         }
@@ -671,7 +698,6 @@ public class HighlightTextView extends View {
         scrollToVisable();
         postInvalidate();
         postDelayed(blinkAction, BLINK_TIMEOUT);
-        return deleteText;
     }
 
     // copy text
@@ -770,7 +796,7 @@ public class HighlightTextView extends View {
 
     // replace first 
     public void replaceFirst(String replacement) {
-        if(!mReplaceList.isEmpty()) {
+        if(!mReplaceList.isEmpty() && isEditedMode) {
             int start = (Integer) mReplaceList.get(0).first;
             int end = (Integer) mReplaceList.get(0).second;
 
@@ -801,7 +827,7 @@ public class HighlightTextView extends View {
 
     // replace all
     public void replaceAll(String replacement) {
-        while(!mReplaceList.isEmpty()) {
+        while(!mReplaceList.isEmpty() && isEditedMode) {
             replaceFirst(replacement);
         }
     }
@@ -1027,7 +1053,7 @@ public class HighlightTextView extends View {
         // when hide soft keyboard
         if(getHeight() > screenHeight / 2)
             slopY = slopY * 3;
-        
+
         int dy = 0;
         if(mCursorPosY - getScrollY() <= 0) {
             // up scroll
