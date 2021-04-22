@@ -102,7 +102,6 @@ public class HighlightTextView extends View {
     }
 
     private void initView(Context context) {
-
         screenWidth = ScreenUtils.getScreenWidth(context);
         screenHeight = ScreenUtils.getScreenHeight(context);
 
@@ -136,14 +135,13 @@ public class HighlightTextView extends View {
         mGestureListener = new GestureListener();
         mGestureDetector = new GestureDetector(context, mGestureListener);
         //mGestureDetector.setIsLongpressEnabled(false);
-
         mScaleGestureDetector = new ScaleGestureDetector(context, new ScaleGestureListener());
-
+        
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
         setTextSize(ScreenUtils.dip2px(context, 18));
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaint.setColor(Color.GREEN);
-        mPaint.setStrokeWidth(10);
+        mPaint.setStrokeWidth(5);
 
         mScroller = new OverScroller(context);
         mClipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
@@ -151,10 +149,7 @@ public class HighlightTextView extends View {
         mReplaceList = new ArrayList<>();
 
         spaceWidth = (int) mTextPaint.measureText(String.valueOf(' '));
-
-        mCursorIndex = 0;
-        mCursorLine = 1;
-
+        
         requestFocus();
         setFocusable(true);
         postDelayed(blinkAction, BLINK_TIMEOUT);
@@ -162,12 +157,12 @@ public class HighlightTextView extends View {
 
     // cursor blink
     private Runnable blinkAction = new Runnable() {
-
         @Override
         public void run() {
             // TODO: Implement this method
             mCursorVisiable = !mCursorVisiable;
             postDelayed(blinkAction, BLINK_TIMEOUT);
+            
             if(System.currentTimeMillis() - mLastTapTime >= 5 * BLINK_TIMEOUT) {
                 mHandleMiddleVisable = false;
             }
@@ -177,8 +172,16 @@ public class HighlightTextView extends View {
 
     public void setTextBuffer(TextBuffer textBuffer) {
         mTextBuffer = textBuffer;
+        setCursorPosition(0);
+        postInvalidate();
     }
 
+    public void setText(CharSequence c){
+        mTextBuffer = new TextBuffer(c);
+        setCursorPosition(0);
+        postInvalidate();
+    }
+    
     // the text size unit is px
     public void setTextSize(float px) {
         // min text size 10dp
@@ -206,11 +209,10 @@ public class HighlightTextView extends View {
         }
     }
 
-
     public void setTypeface(Typeface typeface) {
         mTextPaint.setTypeface(typeface);
     }
-
+    
     public TextPaint getPaint() {
         return mTextPaint;
     }
@@ -220,7 +222,7 @@ public class HighlightTextView extends View {
     }
 
     private int getLeftSpace() {
-        return getPaddingLeft() + getLineNumberWidth() + SPACEING;
+        return getPaddingLeft() + getLineNumberWidth(getLineCount()) + SPACEING;
     }
 
     public static int getTextMeasureWidth(String text) {
@@ -243,8 +245,8 @@ public class HighlightTextView extends View {
         return getCharWidth(mTextBuffer.getCharAt(index));
     }
 
-    private int getLineNumberWidth() {
-        return String.valueOf(getLineCount()).length() * getCharWidth('0');
+    private int getLineNumberWidth(int line) {
+        return String.valueOf(line).length() * getCharWidth('0');
     }
 
     private int getLineStart(int line) {
@@ -274,7 +276,6 @@ public class HighlightTextView extends View {
     public int getMaxScrollY() {
         return Math.max(0, getTextHeight() + getLineHeight() * 2 - getHeight());
     }
-
 
     /**
      * Like {@link View#scrollBy}, but scroll smoothly instead of immediately.
@@ -330,7 +331,6 @@ public class HighlightTextView extends View {
         setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), 
                              MeasureSpec.getSize(heightMeasureSpec));
     }
-
 
     // draw line background
     public void drawLineBackground(Canvas canvas) {
@@ -467,8 +467,8 @@ public class HighlightTextView extends View {
 
         int endLine = Math.min(canvas.getClipBounds().bottom / getLineHeight() + 1, getLineCount());
 
-        int lineNumWidth = getLineNumberWidth();
-
+        int lineNumWidth = lineNumWidth = getLineNumberWidth(getLineCount());
+        
         for(int i=startLine; i <= endLine; ++i) {
 
             int textX = getPaddingLeft();
@@ -589,13 +589,13 @@ public class HighlightTextView extends View {
     }
 
     // Insert text
-    private String insert(String s, UndoStack.Action action) {
+    private String insert(CharSequence c, UndoStack.Action action) {
         removeCallbacks(blinkAction);
         mCursorVisiable = true;
         mHandleMiddleVisable = false;
 
-        int length = s.length();
-        String insertText = s;
+        int length = c.length();
+        String insertText = c.toString();
         String deleteText = null;
 
         if(isSelectMode) {
@@ -609,13 +609,13 @@ public class HighlightTextView extends View {
         }
 
         // real insert
-        mTextBuffer.insert(mCursorIndex, s, mCursorLine);
+        mTextBuffer.insert(mCursorIndex, c, mCursorLine);
 
         // add undo stack action
         if(action != null) {
             action.insertStart = mCursorIndex;
             action.insertEnd = mCursorIndex + length;
-            action.insertText = s;
+            action.insertText = insertText;
             mUndoStack.add(action);
         }
 
@@ -1054,7 +1054,6 @@ public class HighlightTextView extends View {
 
         // for auto scroll select handle
         private Runnable moveAction = new Runnable() {
-
             @Override
             public void run() {
                 // TODO: Implement this method
@@ -1364,7 +1363,7 @@ public class HighlightTextView extends View {
         @Override
         public boolean commitText(CharSequence text, int newCursorPosition) {
             // TODO: Implement this method
-            insert(text.toString(), new UndoStack.Action());
+            insert(text, new UndoStack.Action());
             return super.commitText(text, newCursorPosition);
         }
 

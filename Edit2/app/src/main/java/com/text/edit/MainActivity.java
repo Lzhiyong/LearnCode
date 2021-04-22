@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -30,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final String TAG = this.getClass().getSimpleName();
 
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,13 +40,13 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         //getSupportActionBar().hide();
-
+        
 
         mTextView = findViewById(R.id.mTextView);
         mTextView.setTypeface(Typeface.MONOSPACE);
 
-        mTextBuffer = new TextBuffer();
-
+        mTextView.setText("Hello");
+        
         String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
         if(!hasPermission(permission)) {
@@ -55,15 +57,7 @@ public class MainActivity extends AppCompatActivity {
             externalPath = Environment.getExternalStorageDirectory().getAbsolutePath();
         }
         
-        mTextView.post(new Runnable(){
-                @Override
-                public void run() {
-                    // TODO: Implement this method
-                    //mTextView.setClipRect(null);
-                }
-        });
-        
-        openFile(externalPath + "/Download/books/doupo.txt");
+        //new ReadFileThread().execute(new File(externalPath + "/Download/books/doupo.txt"));
     }
 
     public boolean hasPermission(String permission) {
@@ -117,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
             mTextView.selectAll();
             break;
         case R.id.action_open:
-            openFile(externalPath + "/Download/books/doupo.txt");
+            //openFile(externalPath + "/Download/books/doupo.txt");
             break;
         case R.id.action_gotoline:
             showGotoLineDialog();
@@ -147,57 +141,85 @@ public class MainActivity extends AppCompatActivity {
         View v = getLayoutInflater().inflate(R.layout.dialog_gotoline, null);
         final EditText mLineEdit = v.findViewById(R.id.mLineEdit);
         mLineEdit.setHint("1.." + mTextBuffer.getLineCount());
-        
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setView(v);
         builder.setTitle("goto line");
 
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener(){
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String line = mLineEdit.getText().toString();
-                if(line != null && !line.equals("")) {
-                    mTextView.gotoLine(Integer.parseInt(line));
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    String line = mLineEdit.getText().toString();
+                    if(line != null && !line.equals("")) {
+                        mTextView.gotoLine(Integer.parseInt(line));
+                    }
                 }
-            }
-        });
-        
+            });
+
         builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener(){
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
         builder.setCancelable(true).show();
     }
+    
+    
+    class ReadFileThread extends AsyncTask<File, Integer, Boolean> {
 
+        @Override
+        protected void onPreExecute() {
+            // TODO: Implement this method
+            super.onPreExecute();
+        }
+        
+        
+        @Override
+        protected Boolean doInBackground(File... files) {
+            // TODO: Implement this method
+            int lineCount = (int) FileUtils.getLineNumber(files[0]);
+            //mTextBuffer.tempLineCount = lineCount;
+            
+            try {
+                StringBuilder buf = mTextBuffer.getBuffer();
+                BufferedReader br = ReaderFactory.createBufferedReader(files[0]);
+                String text = null;
 
-    public void openFile(String pathname) {
-        int lineCount = 0;
-        int width = 0;  
-        try {
-            StringBuilder buf = mTextBuffer.getBuffer();
-            BufferedReader br = ReaderFactory.createBufferedReader(new File(pathname));
-            String text = null;
-            while((text = br.readLine()) != null) {
-                ++lineCount;
-                buf.append(text + "\n");
-                mTextBuffer.getIndexList().add(buf.length());
+                // add first index 0
+                mTextBuffer.getIndexList().add(0);
+                while((text = br.readLine()) != null) {
+                    buf.append(text + "\n");
+                    mTextBuffer.getIndexList().add(buf.length());
 
-                width = (int)mTextView.getPaint().measureText(text);
-                mTextBuffer.getWidthList().add(width);
+                    int width = mTextView.getTextMeasureWidth(text);
+                    mTextBuffer.getWidthList().add(width);
+                }
+
+                br.close();
+            } catch(Exception e) {
+                Log.e(TAG, e.getMessage());
             }
 
-            br.close();
-        } catch(Exception e) {
-            Log.e(TAG, e.getMessage());
+            // remove the last index of '\n'
+            int size = mTextBuffer.getIndexList().size();
+            mTextBuffer.getIndexList().remove(size - 1);
+            return true;
         }
 
-        // remove the last index of '\n'
-        mTextBuffer.getIndexList().remove(lineCount);
-        mTextBuffer.setLineCount(lineCount);
-
-        mTextView.setTextBuffer(mTextBuffer);
-        mTextView.setCursorPosition(0, 0);
+        @Override
+        protected void onProgressUpdate(Integer[] values) {
+            // TODO: Implement this method
+            super.onProgressUpdate(values);
+            
+        }
+        
+        
+        @Override
+        protected void onPostExecute(Boolean result) {
+            // TODO: Implement this method
+            super.onPostExecute(result);
+            //mTextBuffer.isWriteBufferFinish = result;
+        }
     }
 }
