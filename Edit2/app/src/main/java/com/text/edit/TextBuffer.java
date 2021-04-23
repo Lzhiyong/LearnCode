@@ -139,7 +139,7 @@ public class TextBuffer implements Serializable {
     // end index of the text line
     public int getLineEnd(int line) {
         int start = getLineStart(line);
-        int length = getLine(line).length();
+        int length = indexOfLineText(start).length();
         return start + length - 1;
     }
 
