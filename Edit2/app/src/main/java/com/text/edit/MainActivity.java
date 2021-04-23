@@ -8,24 +8,31 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import org.mozilla.universalchardet.ReaderFactory;
-import android.text.SpannableStringBuilder;
-import android.widget.TextView;
-import android.text.Spanned;
-import android.os.Handler;
-import android.os.Message;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import org.mozilla.universalchardet.UniversalDetector;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -34,23 +41,24 @@ public class MainActivity extends AppCompatActivity {
 
     private AlertDialog mProgressDialog;
     private ProgressBar mIndeterminateBar;
-    
+
+    private Charset mDefaultCharset = StandardCharsets.UTF_8;
     private String externalPath = File.separator;
 
     private final int DISABLE_PROGRESD_DIALOG = 0;
-    
+
     private final String TAG = this.getClass().getSimpleName();
 
-    
+
     private Handler mHandler = new Handler(){
 
         @Override
         public void handleMessage(Message msg) {
             // TODO: Implement this method
             super.handleMessage(msg);
-            switch(msg.what){
+            switch(msg.what) {
             case DISABLE_PROGRESD_DIALOG:
-                if(mProgressDialog != null){
+                if(mProgressDialog != null) {
                     mProgressDialog.dismiss();
                 }
                 mIndeterminateBar.setVisibility(View.VISIBLE);
@@ -90,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
         mTextBuffer = new TextBuffer();
         mTextView.setTextBuffer(mTextBuffer);
 
-        new ReadFileThread().execute(new File(externalPath + "/Download/books/doupo.txt"));
+        new ReadFileThread().execute(externalPath + "/Download/books/doupo.txt");
     }
 
     public boolean hasPermission(String permission) {
@@ -164,10 +172,8 @@ public class MainActivity extends AppCompatActivity {
             mTextView.next();
             break;
         }
-
         return super.onOptionsItemSelected(item);
     }
-
 
     private void showGotoLineDialog() {
 
@@ -204,7 +210,7 @@ public class MainActivity extends AppCompatActivity {
         SpannableStringBuilder span = new SpannableStringBuilder(textMessage.getText());
         buildTextSpans(span, textMessage);
         textMessage.setText(span);
-        
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setView(v);
 
@@ -232,8 +238,9 @@ public class MainActivity extends AppCompatActivity {
         return textSpans;
     }
 
-    class ReadFileThread extends AsyncTask<File, Integer, Boolean> {
-
+    // read file
+    class ReadFileThread extends AsyncTask<String, Integer, Boolean> {
+        
         @Override
         protected void onPreExecute() {
             // TODO: Implement this method
@@ -243,15 +250,24 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected Boolean doInBackground(File... files) {
+        protected Boolean doInBackground(String... params) {
             // TODO: Implement this method
-            mTextBuffer.tempLineCount = (int) FileUtils.getLineNumber(files[0]);
-            mTextView.postInvalidate();
+            Path path = Paths.get(params[0]);
+            mTextBuffer.tempLineCount = FileUtils.getLineNumber(path.toFile());
+
             try {
-                BufferedReader br = ReaderFactory.createBufferedReader(files[0]);
+                // detect the file encoding
+                String charset = UniversalDetector.detectCharset(path.toFile());
+                if(charset != null) mDefaultCharset = Charset.forName(charset);
+               
+                // create buffered reader
+                BufferedReader bufferRead = null;
+                bufferRead = Files.newBufferedReader(path, mDefaultCharset);
+
                 StringBuilder buf = mTextBuffer.getBuffer();
                 String text = null;
-                while((text = br.readLine()) != null) {
+                // read file
+                while((text = bufferRead.readLine()) != null) {
                     buf.append(text + "\n");
 
                     if(mTextBuffer.getIndexList().size() == 0) {
@@ -261,12 +277,14 @@ public class MainActivity extends AppCompatActivity {
                     }
                     mTextBuffer.getIndexList().add(buf.length());
 
+                    // text line width
                     int width = mTextView.getTextMeasureWidth(text);
                     if(width > mTextBuffer.tempLineWidth)
                         mTextBuffer.tempLineWidth = width;
                     mTextBuffer.getWidthList().add(width);
                 }
-                br.close();
+                // close stream
+                bufferRead.close();
             } catch(Exception e) {
                 Log.e(TAG, e.getMessage());
             }
@@ -281,8 +299,38 @@ public class MainActivity extends AppCompatActivity {
             // TODO: Implement this method
             super.onPostExecute(result);
             mTextBuffer.onReadFinish = result;
-            mTextView.setEditedMode(true);
+            mTextView.setEditedMode(result);
             mIndeterminateBar.setVisibility(View.GONE);
         }
     }
+
+    // write file
+    class WriteFileThread extends AsyncTask<String, Integer, Boolean> {
+
+        @Override
+        protected Boolean doInBackground(String...params) {
+            // TODO: Implement this method
+            try {
+                BufferedWriter bufferWrite = null;
+                bufferWrite = Files.newBufferedWriter(Paths.get(params[0]), 
+                                                      mDefaultCharset,
+                                                      StandardOpenOption.WRITE);
+                bufferWrite.write(mTextBuffer.getBuffer().toString());     
+                bufferWrite.flush();
+                bufferWrite.close();
+            } catch(Exception e) {
+                Log.e(TAG, e.getMessage());
+            }
+            return true;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            // TODO: Implement this method
+            super.onPostExecute(result);
+            mTextBuffer.onWriteFinish = result;
+            Toast.makeText(getApplicationContext(), "saved success!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 }

@@ -6,14 +6,14 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 
 public class FileUtils {
-    // 
-    public static long getLineNumber(File file) {
+    // get the line count of file
+    public static int getLineNumber(File file) {
         try {
             FileReader fileReader = new FileReader(file);
             LineNumberReader lineNumberReader = new LineNumberReader(fileReader);
 
-            lineNumberReader.skip(Long.MAX_VALUE);
-            long lines = lineNumberReader.getLineNumber() + 1;
+            lineNumberReader.skip(Integer.MAX_VALUE);
+            int lines = lineNumberReader.getLineNumber() + 1;
 
             fileReader.close();
             lineNumberReader.close();
