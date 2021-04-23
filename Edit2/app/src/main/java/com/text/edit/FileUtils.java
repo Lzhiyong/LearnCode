@@ -40,13 +40,13 @@ public class FileUtils {
         return 0;
     }
 
-    public static boolean checkOpenFile(Path path) {
+    public static boolean checkOpenFileState(Path path) {
         if(!Files.exists(path) || !Files.isReadable(path)) 
             return false;
         return true;
     }
 
-    public static boolean checkSaveFile(Path path) {
+    public static boolean checkSaveFileState(Path path) {
         if(!Files.isWritable(path)) 
             return false;
         return true;

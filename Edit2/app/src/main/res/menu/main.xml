@@ -3,86 +3,42 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <item
-        android:id="@+id/action_undo"
+        android:id="@+id/menu_undo"
         android:orderInCategory="100"
         android:title="undo"
-        android:icon="@drawable/ic_undo_selector"
         app:showAsAction="always" />
 
     <item
-        android:id="@+id/action_redo"
+        android:id="@+id/menu_redo"
         android:orderInCategory="200"
         android:title="redo"
-        android:icon="@drawable/ic_redo_selector"
         app:showAsAction="always" />
+    
     <item
-        android:id="@+id/action_copy"
+        android:id="@+id/menu_edit"
         android:orderInCategory="300"
-        android:title="@string/action_copy"
-        android:icon="@drawable/ic_copy_selector"
+        android:title="edit"
         app:showAsAction="always" />
-
     <item
-        android:id="@+id/action_cut"
+        android:id="@+id/menu_open"
         android:orderInCategory="400"
-        android:title="@string/action_cut"
-        android:icon="@drawable/ic_cut_selector"
-        app:showAsAction="always" />
+        android:title="@string/menu_open"
+        app:showAsAction="never" />
 
     <item
-        android:id="@+id/action_paste"
+        android:id="@+id/menu_gotoline"
         android:orderInCategory="500"
-        android:title="@string/action_paste"
-        android:icon="@drawable/ic_paste_selector"
-        app:showAsAction="always" />
-
+        android:title="@string/menu_gotoline"
+        app:showAsAction="never" />
     <item
-        android:id="@+id/action_select_all"
+        android:id="@+id/menu_settings"
         android:orderInCategory="600"
-        android:title="@string/action_select_all"
-        android:icon="@drawable/ic_select_all_selector"
-        app:showAsAction="always" />
-    
+        android:title="@string/menu_settings"
+        app:showAsAction="never" />
     <item
-        android:id="@+id/action_open"
+        android:id="@+id/menu_save"
         android:orderInCategory="700"
-        android:title="@string/action_open"
-        android:showAsAction="never" />
-
-    <item
-        android:id="@+id/action_gotoline"
-        android:orderInCategory="800"
-        android:title="@string/action_gotoline"
-        android:showAsAction="never" />
-
-    <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="900"
-        android:title="@string/action_settings"
-        android:showAsAction="never" />
-    
-    <item
-        android:id="@+id/action_replaceFirst"
-        android:orderInCategory="1000"
-        android:title="@string/action_replaceFirst"
-        android:showAsAction="never" />
-    
-    <item
-        android:id="@+id/action_replaceAll"
-        android:orderInCategory="1100"
-        android:title="@string/action_replaceAll"
-        android:showAsAction="never" />
-    
-    <item
-        android:id="@+id/action_find_prev"
-        android:orderInCategory="1200"
-        android:title="@string/action_find_prev"
-        android:showAsAction="never" />
-
-    <item
-        android:id="@+id/action_find_next"
-        android:orderInCategory="1300"
-        android:title="@string/action_find_next"
-        android:showAsAction="never" />
+        android:title="@string/menu_save"
+        app:showAsAction="never" />
 </menu>
 

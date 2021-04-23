@@ -61,6 +61,7 @@ public class HighlightTextView extends View {
     private UndoStack mUndoStack;
     private TextBuffer mTextBuffer;
 
+    private OnTextChangedListener mTextListener;
     private OverScroller mScroller;
     private GestureDetector mGestureDetector;
     private GestureListener mGestureListener;
@@ -214,11 +215,19 @@ public class HighlightTextView extends View {
     public void setEditedMode(boolean editMode) {
         isEditedMode = editMode;
     }
+    
+    public boolean getEditedMode() {
+        return isEditedMode;
+    }
 
     public void setTypeface(Typeface typeface) {
         mTextPaint.setTypeface(typeface);
     }
 
+    public void setOnTextChangedListener(OnTextChangedListener listener) {
+        mTextListener = listener;
+    }
+    
     public TextPaint getPaint() {
         return mTextPaint;
     }
@@ -652,7 +661,8 @@ public class HighlightTextView extends View {
         mCursorIndex += length;
         mCursorLine = mTextBuffer.getOffsetLine(mCursorIndex);
         adjustCursorPosition(mCursorIndex, mCursorLine);
-
+        mTextListener.onTextChanged();
+        
         scrollToVisable();
         postInvalidate();
         postDelayed(blinkAction, BLINK_TIMEOUT);
@@ -698,7 +708,8 @@ public class HighlightTextView extends View {
         mCursorIndex -= (end - start);
         mCursorLine = mTextBuffer.getOffsetLine(mCursorIndex);
         adjustCursorPosition(mCursorIndex, mCursorLine);
-
+        mTextListener.onTextChanged();
+        
         scrollToVisable();
         postInvalidate();
         postDelayed(blinkAction, BLINK_TIMEOUT);

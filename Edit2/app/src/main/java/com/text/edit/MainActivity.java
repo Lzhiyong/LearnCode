@@ -49,12 +49,11 @@ public class MainActivity extends AppCompatActivity {
     private String externalPath = File.separator;
 
     private final int DISABLE_PROGRESD_DIALOG = 0;
-
+    private final int REFRESH_OPTION_MENU = 1;
+    
     private final String TAG = this.getClass().getSimpleName();
 
-
-    private Handler mHandler = new Handler(){
-
+    private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             // TODO: Implement this method
@@ -66,10 +65,20 @@ public class MainActivity extends AppCompatActivity {
                 }
                 mIndeterminateBar.setVisibility(View.VISIBLE);
                 break;
+            case REFRESH_OPTION_MENU:
+                invalidateOptionsMenu();
             }
         }
     };
 
+    private OnTextChangedListener textListener = new OnTextChangedListener() {
+        @Override
+        public void onTextChanged() {
+            // TODO: Implement this method
+            mHandler.sendEmptyMessage(REFRESH_OPTION_MENU);
+        }
+    };
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,7 +93,8 @@ public class MainActivity extends AppCompatActivity {
 
         mTextView = findViewById(R.id.mTextView);
         mTextView.setTypeface(Typeface.MONOSPACE);
-
+        mTextView.setOnTextChangedListener(textListener);
+        
         mSharedPreference = PreferenceManager.getDefaultSharedPreferences(this);
 
         mTextView.setText("Hello");
@@ -116,12 +126,42 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void toggleEditMode() {
+        mTextView.setEditedMode(!mTextView.getEditedMode());
+        mHandler.sendEmptyMessage(REFRESH_OPTION_MENU);
+    }
+    
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         // TODO: Implement this method
         super.onWindowFocusChanged(hasFocus);
     }
 
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        // TODO: Implement this method
+        MenuItem itemUndo = menu.findItem(R.id.menu_undo);
+        itemUndo.setIcon(R.drawable.ic_undo_white_24dp);
+        if(mTextView.getUndoStack().canUndo())
+            itemUndo.setEnabled(true);
+        else
+            itemUndo.setEnabled(false);
+            
+        MenuItem itemRedo = menu.findItem(R.id.menu_redo);
+        itemRedo.setIcon(R.drawable.ic_redo_white_24dp);
+        if(mTextView.getUndoStack().canRedo())
+            itemRedo.setEnabled(true);
+        else
+            itemRedo.setEnabled(false);
+            
+        MenuItem itemEdit = menu.findItem(R.id.menu_edit);
+        if(mTextView.getEditedMode())
+            itemEdit.setIcon(R.drawable.ic_edit_white_24dp);     
+        else
+            itemEdit.setIcon(R.drawable.ic_look_white_24dp);     
+        return super.onPrepareOptionsMenu(menu);
+    }
+    
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
@@ -130,45 +170,23 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
         switch(item.getItemId()) {
-        case R.id.action_undo:
+        case R.id.menu_undo:
             mTextView.undo();
             break;
-        case R.id.action_redo:
+        case R.id.menu_redo:
             mTextView.redo();
             break;
-        case R.id.action_copy:
-            mTextView.copy();
+        case R.id.menu_edit:
+            toggleEditMode();
             break;
-        case R.id.action_cut:
-            mTextView.cut();
-            break;
-        case R.id.action_paste:
-            mTextView.paste();
-            break;
-        case R.id.action_select_all:
-            mTextView.selectAll();
-            break;
-        case R.id.action_open:
+        case R.id.menu_open:
             showOperateFileDialog("open file", true);
             break;
-        case R.id.action_gotoline:
+        case R.id.menu_gotoline:
             showGotoLineDialog();
             break;
-        case R.id.action_settings:
-            break;
-        case R.id.action_replaceFirst:
-            mTextView.replaceFirst("haha");
-            break;
-        case R.id.action_replaceAll:
-            mTextView.replaceAll("haha");
-            break;
-        case R.id.action_find_prev:
-            mTextView.prev();
-            break;
-        case R.id.action_find_next:
-            mTextView.next();
+        case R.id.menu_settings:
             break;
         }
         return super.onOptionsItemSelected(item);
@@ -294,7 +312,7 @@ public class MainActivity extends AppCompatActivity {
         protected Boolean doInBackground(String...params) {
             // TODO: Implement this method
             Path path = Paths.get(params[0]);
-            if(!FileUtils.checkOpenFile(path) 
+            if(!FileUtils.checkOpenFileState(path) 
                && !FileUtils.checkSameFile(path)) 
                 return false;
 
@@ -356,7 +374,7 @@ public class MainActivity extends AppCompatActivity {
         protected Boolean doInBackground(String...params) {
             // TODO: Implement this method
             Path path = Paths.get(params[0]);
-            if(!FileUtils.checkSaveFile(path)) 
+            if(!FileUtils.checkSaveFileState(path)) 
                 return false;
                 
             try {
