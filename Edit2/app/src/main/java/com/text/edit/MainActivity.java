@@ -33,6 +33,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import org.mozilla.universalchardet.UniversalDetector;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -42,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private AlertDialog mProgressDialog;
     private ProgressBar mIndeterminateBar;
 
+    private SharedPreferences mSharedPreference;
     private Charset mDefaultCharset = StandardCharsets.UTF_8;
     private String externalPath = File.separator;
 
@@ -74,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
         Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().hide();
+        //getSupportActionBar().hide();
 
         mIndeterminateBar = findViewById(R.id.indeterminateBar);
         mIndeterminateBar.setBackground(null);
@@ -82,8 +85,9 @@ public class MainActivity extends AppCompatActivity {
         mTextView = findViewById(R.id.mTextView);
         mTextView.setTypeface(Typeface.MONOSPACE);
 
-        //mTextView.setText("Hello");
+        mSharedPreference = PreferenceManager.getDefaultSharedPreferences(this);
 
+        //mTextView.setText("Hello");
 
         String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
@@ -95,10 +99,8 @@ public class MainActivity extends AppCompatActivity {
             externalPath = Environment.getExternalStorageDirectory().getAbsolutePath();
         }
 
-        mTextBuffer = new TextBuffer();
-        mTextView.setTextBuffer(mTextBuffer);
-
-        new ReadFileThread().execute(externalPath + "/Download/books/doupo.txt");
+        //mTextBuffer = new TextBuffer();
+        //mTextView.setTextBuffer(mTextBuffer);
     }
 
     public boolean hasPermission(String permission) {
@@ -152,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
             mTextView.selectAll();
             break;
         case R.id.action_open:
-            //openFile(externalPath + "/Download/books/doupo.txt");
+            showOperateFileDialog("open file", true);
             break;
         case R.id.action_gotoline:
             showGotoLineDialog();
@@ -176,10 +178,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showGotoLineDialog() {
-
         View v = getLayoutInflater().inflate(R.layout.dialog_gotoline, null);
-        final EditText mLineEdit = v.findViewById(R.id.mLineEdit);
-        mLineEdit.setHint("1.." + mTextBuffer.getLineCount());
+        final EditText lineEdit = v.findViewById(R.id.lineEdit);
+        lineEdit.setHint("1.." + mTextBuffer.getLineCount());
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setView(v);
@@ -188,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener(){
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    String line = mLineEdit.getText().toString();
+                    String line = lineEdit.getText().toString();
                     if(line != null && !line.equals("")) {
                         mTextView.gotoLine(Integer.parseInt(line));
                     }
@@ -218,6 +219,44 @@ public class MainActivity extends AppCompatActivity {
         mProgressDialog.show();
     }
 
+    // open and save the file
+    private void showOperateFileDialog(String title, final boolean isRead) {
+        View v = getLayoutInflater().inflate(R.layout.dialog_openfile, null);
+        final EditText pathEdit = v.findViewById(R.id.pathEdit);
+        if(isRead) {
+            String path = mSharedPreference.getString("opened_filepath", null);
+            if(path != null && !path.isEmpty()) pathEdit.setText(path);
+        }
+        pathEdit.setHint("please enter the file path");
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(v);
+        builder.setTitle(title);
+
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener(){
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    String pathname = pathEdit.getText().toString();
+                    if(pathname != null && !pathname.isEmpty()) {
+                        if(isRead) {
+                            mSharedPreference.edit().putString("opened_filepath", pathname).commit();
+                            new ReadFileThread().execute(pathname);
+                        } else {
+                            new WriteFileThread().execute(pathname);
+                        }
+                    }
+                }
+            });
+
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener(){
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+        builder.setCancelable(true).show();
+    }
+
     private TextAnimate[] buildTextSpans(SpannableStringBuilder span, TextView textview) {
         TextAnimate[] textSpans;
         int duration = 1200;
@@ -240,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
 
     // read file
     class ReadFileThread extends AsyncTask<String, Integer, Boolean> {
-        
+
         @Override
         protected void onPreExecute() {
             // TODO: Implement this method
@@ -250,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected Boolean doInBackground(String... params) {
+        protected Boolean doInBackground(String...params) {
             // TODO: Implement this method
             Path path = Paths.get(params[0]);
             mTextBuffer.tempLineCount = FileUtils.getLineNumber(path.toFile());
@@ -259,7 +298,7 @@ public class MainActivity extends AppCompatActivity {
                 // detect the file encoding
                 String charset = UniversalDetector.detectCharset(path.toFile());
                 if(charset != null) mDefaultCharset = Charset.forName(charset);
-               
+
                 // create buffered reader
                 BufferedReader bufferRead = null;
                 bufferRead = Files.newBufferedReader(path, mDefaultCharset);
@@ -332,5 +371,4 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "saved success!", Toast.LENGTH_SHORT).show();
         }
     }
-
 }

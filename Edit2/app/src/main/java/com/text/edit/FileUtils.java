@@ -6,7 +6,8 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 
 public class FileUtils {
-    // get the line count of file
+    
+    // get the line count of the file
     public static int getLineNumber(File file) {
         try {
             FileReader fileReader = new FileReader(file);

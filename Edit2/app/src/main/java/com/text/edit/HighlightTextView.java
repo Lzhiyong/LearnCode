@@ -73,6 +73,7 @@ public class HighlightTextView extends View {
     private boolean isEditedMode = true;
     private boolean isSelectMode = false;
 
+    private String mDefaultText;
     private long mLastScroll;
     // record last single tap time
     private long mLastTapTime;
@@ -147,6 +148,7 @@ public class HighlightTextView extends View {
         mUndoStack = new UndoStack();
         mReplaceList = new ArrayList<>();
 
+        mDefaultText = getResources().getString(R.string.default_text);
         spaceWidth = (int) mTextPaint.measureText(String.valueOf(' '));
 
         mCursorPosX = getPaddingLeft() + SPACEING;
@@ -214,7 +216,7 @@ public class HighlightTextView extends View {
     public void setEditedMode(boolean editMode) {
         isEditedMode = editMode;
     }
-    
+
     public void setTypeface(Typeface typeface) {
         mTextPaint.setTypeface(typeface);
     }
@@ -507,8 +509,14 @@ public class HighlightTextView extends View {
     protected void onDraw(Canvas canvas) {
         // TODO: Implement this method
         super.onDraw(canvas);
-        // nothing to do
-        if(getLineCount() <= 0) return;
+        if(mTextBuffer == null || getLineCount() <= 0) {
+            canvas.drawText(mDefaultText, 
+                            getWidth() / 2 - getTextMeasureWidth(mDefaultText) / 2 , 
+                            getHeight() / 2 - getLineHeight(), 
+                            mTextPaint
+                            );
+            return; // no text content, return directly 
+        } 
 
         canvas.save();
 
@@ -543,8 +551,8 @@ public class HighlightTextView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         // TODO: Implement this method
-        if(getLineCount() <= 0) {
-            // nothing to do
+        if(mTextBuffer == null || getLineCount() <= 0) {
+            // no text content, return false directly 
             return false;
         }
 
@@ -612,7 +620,7 @@ public class HighlightTextView extends View {
     private void insert(CharSequence c, UndoStack.Action action) {
         // nothing to do
         if(!isEditedMode) return;
-        
+
         removeCallbacks(blinkAction);
         mCursorVisiable = true;
         mHandleMiddleVisable = false;
@@ -656,7 +664,7 @@ public class HighlightTextView extends View {
     private void delete(int start, int end, UndoStack.Action action) {
         // nothing to do
         if(!isEditedMode) return;
-        
+
         removeCallbacks(blinkAction);
         mCursorVisiable = true;
         mHandleMiddleVisable = false;
@@ -1216,7 +1224,7 @@ public class HighlightTextView extends View {
 
                 if(!mReplaceList.isEmpty()) 
                     mReplaceList.clear();
-                
+
                 setCursorPosition(x, y);
                 //Log.i(TAG, "mCursorIndex: " + mCursorIndex);
                 postInvalidate();
