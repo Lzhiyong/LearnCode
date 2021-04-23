@@ -87,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
 
         mSharedPreference = PreferenceManager.getDefaultSharedPreferences(this);
 
-        //mTextView.setText("Hello");
+        mTextView.setText("Hello");
 
         String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
@@ -98,9 +98,6 @@ public class MainActivity extends AppCompatActivity {
         if(Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             externalPath = Environment.getExternalStorageDirectory().getAbsolutePath();
         }
-
-        //mTextBuffer = new TextBuffer();
-        //mTextView.setTextBuffer(mTextBuffer);
     }
 
     public boolean hasPermission(String permission) {
@@ -238,6 +235,8 @@ public class MainActivity extends AppCompatActivity {
                 public void onClick(DialogInterface dialog, int which) {
                     String pathname = pathEdit.getText().toString();
                     if(pathname != null && !pathname.isEmpty()) {
+                        // add an opened file
+                        FileUtils.addOpenedFile(pathname);
                         if(isRead) {
                             mSharedPreference.edit().putString("opened_filepath", pathname).commit();
                             new ReadFileThread().execute(pathname);
@@ -286,12 +285,19 @@ public class MainActivity extends AppCompatActivity {
             super.onPreExecute();
             mTextView.setEditedMode(false);
             showProgressBarDialig();
+            // create text buffer
+            mTextBuffer = new TextBuffer();
+            mTextView.setTextBuffer(mTextBuffer);
         }
 
         @Override
         protected Boolean doInBackground(String...params) {
             // TODO: Implement this method
             Path path = Paths.get(params[0]);
+            if(!FileUtils.checkOpenFile(path) 
+               && !FileUtils.checkSameFile(path)) 
+                return false;
+
             mTextBuffer.tempLineCount = FileUtils.getLineNumber(path.toFile());
 
             try {
@@ -337,8 +343,8 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean result) {
             // TODO: Implement this method
             super.onPostExecute(result);
-            mTextBuffer.onReadFinish = result;
-            mTextView.setEditedMode(result);
+            mTextBuffer.onReadFinish = true;
+            mTextView.setEditedMode(true);
             mIndeterminateBar.setVisibility(View.GONE);
         }
     }
@@ -349,10 +355,13 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Boolean doInBackground(String...params) {
             // TODO: Implement this method
+            Path path = Paths.get(params[0]);
+            if(!FileUtils.checkSaveFile(path)) 
+                return false;
+                
             try {
                 BufferedWriter bufferWrite = null;
-                bufferWrite = Files.newBufferedWriter(Paths.get(params[0]), 
-                                                      mDefaultCharset,
+                bufferWrite = Files.newBufferedWriter(path, mDefaultCharset, 
                                                       StandardOpenOption.WRITE);
                 bufferWrite.write(mTextBuffer.getBuffer().toString());     
                 bufferWrite.flush();
@@ -367,7 +376,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean result) {
             // TODO: Implement this method
             super.onPostExecute(result);
-            mTextBuffer.onWriteFinish = result;
+            mTextBuffer.onWriteFinish = true;
             Toast.makeText(getApplicationContext(), "saved success!", Toast.LENGTH_SHORT).show();
         }
     }

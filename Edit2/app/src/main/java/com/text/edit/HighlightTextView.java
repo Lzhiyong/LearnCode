@@ -176,13 +176,11 @@ public class HighlightTextView extends View {
 
     public void setTextBuffer(TextBuffer textBuffer) {
         mTextBuffer = textBuffer;
-        //setCursorPosition(0);
         postInvalidate();
     }
 
     public void setText(CharSequence c) {
         mTextBuffer = new TextBuffer(c);
-        setCursorPosition(0);
         postInvalidate();
     }
 
@@ -511,7 +509,7 @@ public class HighlightTextView extends View {
         super.onDraw(canvas);
         if(mTextBuffer == null || getLineCount() <= 0) {
             canvas.drawText(mDefaultText, 
-                            getWidth() / 2 - getTextMeasureWidth(mDefaultText) / 2 , 
+                            getWidth() / 2 - getTextMeasureWidth(mDefaultText) / 2, 
                             getHeight() / 2 - getLineHeight(), 
                             mTextPaint
                             );
