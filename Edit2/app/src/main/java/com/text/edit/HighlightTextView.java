@@ -65,9 +65,7 @@ public class HighlightTextView extends View {
     private GestureDetector mGestureDetector;
     private GestureListener mGestureListener;
     private ScaleGestureDetector mScaleGestureDetector;
-
     private ClipboardManager mClipboard;
-
     private ArrayList<Pair> mReplaceList;
 
     private boolean mCursorVisiable = true;
@@ -1216,10 +1214,9 @@ public class HighlightTextView extends View {
                 mCursorVisiable = mHandleMiddleVisable = true;
                 isSelectMode = false;
 
-                if(!mReplaceList.isEmpty()) {
+                if(!mReplaceList.isEmpty()) 
                     mReplaceList.clear();
-                }
-
+                
                 setCursorPosition(x, y);
                 //Log.i(TAG, "mCursorIndex: " + mCursorIndex);
                 postInvalidate();
@@ -1354,7 +1351,7 @@ public class HighlightTextView extends View {
                 touchOnSelectHandleRight = false;
 
                 if(isSelectMode) {
-                    // set cursor index and position
+                    // set cursor index and position at select mode
                     setCursorPosition(selectionEnd);
                 } else {
                     mLastTapTime = System.currentTimeMillis();
