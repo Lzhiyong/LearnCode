@@ -42,17 +42,19 @@ public class TextBuffer implements Serializable {
         strBuilder.append(c + "\n");
         // add first index 0
         indexList.add(0);
-        
-        for(int i=0; i < getLength(); ++i) {
-            char ch = getCharAt(i);
-            if(ch == '\n') {
-                ++tempLineCount;
-                String text = getLine(tempLineCount);
-                int width = HighlightTextView.getTextMeasureWidth(text);
-                widthList.add(tempLineCount - 1, width);
+        // line start index
+        int start = 0;
+        for(int i=0; i < getLength(); ++i) {           
+            if(getCharAt(i) == '\n') {
+                String text = getText(start, i + 1);
+                tempLineWidth = HighlightTextView.getTextMeasureWidth(text);
+                widthList.add(tempLineWidth);
                 indexList.add(i + 1);
+                start = i + 1;
+                ++tempLineCount;
             }
         }
+        
         // remove the last index of '\n'
         indexList.remove(indexList.size() - 1);
         Log.i(TAG, "size: " + indexList.size());

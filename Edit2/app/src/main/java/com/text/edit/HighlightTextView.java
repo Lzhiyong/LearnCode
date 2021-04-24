@@ -152,8 +152,7 @@ public class HighlightTextView extends View {
         mDefaultText = getResources().getString(R.string.default_text);
         spaceWidth = (int) mTextPaint.measureText(String.valueOf(' '));
 
-        mCursorPosX = getPaddingLeft() + SPACEING;
-        mCursorPosY = 0;
+        setDefaultCursorPosition();
 
         requestFocus();
         setFocusable(true);
@@ -177,12 +176,30 @@ public class HighlightTextView extends View {
 
     public void setTextBuffer(TextBuffer textBuffer) {
         mTextBuffer = textBuffer;
+        setDefaultCursorPosition();
         postInvalidate();
     }
 
     public void setText(CharSequence c) {
         mTextBuffer = new TextBuffer(c);
+        setDefaultCursorPosition();
         postInvalidate();
+    }
+
+    public TextBuffer getTextBuffer() {
+        return mTextBuffer;
+    }
+
+    public void setDefaultCursorPosition() {
+        int lineNumberWidth = 0;
+        if(mTextBuffer != null)
+            lineNumberWidth = getLineNumberWidth(mTextBuffer.getLineCount());
+        else
+            lineNumberWidth = getCharWidth('0');
+        mCursorPosX = getPaddingLeft() + lineNumberWidth + SPACEING;
+        mCursorPosY = 0;
+        mCursorIndex = 0;
+        mCursorLine = mCursorPosY / getLineHeight() + 1;
     }
 
     // the text size unit is px
@@ -215,7 +232,7 @@ public class HighlightTextView extends View {
     public void setEditedMode(boolean editMode) {
         isEditedMode = editMode;
     }
-    
+
     public boolean getEditedMode() {
         return isEditedMode;
     }
@@ -227,7 +244,7 @@ public class HighlightTextView extends View {
     public void setOnTextChangedListener(OnTextChangedListener listener) {
         mTextListener = listener;
     }
-    
+
     public TextPaint getPaint() {
         return mTextPaint;
     }
@@ -635,7 +652,7 @@ public class HighlightTextView extends View {
         int length = c.length();
         String insertText = c.toString();
         String deleteText = null;
-
+        
         if(isSelectMode) {
             // no need to add action
             deleteText = mTextBuffer.getText(selectionStart, selectionEnd);
@@ -662,7 +679,7 @@ public class HighlightTextView extends View {
         mCursorLine = mTextBuffer.getOffsetLine(mCursorIndex);
         adjustCursorPosition(mCursorIndex, mCursorLine);
         mTextListener.onTextChanged();
-        
+
         scrollToVisable();
         postInvalidate();
         postDelayed(blinkAction, BLINK_TIMEOUT);
@@ -709,7 +726,7 @@ public class HighlightTextView extends View {
         mCursorLine = mTextBuffer.getOffsetLine(mCursorIndex);
         adjustCursorPosition(mCursorIndex, mCursorLine);
         mTextListener.onTextChanged();
-        
+
         scrollToVisable();
         postInvalidate();
         postDelayed(blinkAction, BLINK_TIMEOUT);

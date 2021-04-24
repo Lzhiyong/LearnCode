@@ -35,11 +35,11 @@ import java.nio.file.StandardOpenOption;
 import org.mozilla.universalchardet.UniversalDetector;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     private HighlightTextView mTextView;
-    private TextBuffer mTextBuffer;
 
     private AlertDialog mProgressDialog;
     private ProgressBar mIndeterminateBar;
@@ -96,9 +96,8 @@ public class MainActivity extends AppCompatActivity {
         mTextView.setOnTextChangedListener(textListener);
         
         mSharedPreference = PreferenceManager.getDefaultSharedPreferences(this);
-
-        mTextView.setText("Hello");
-
+        //mTextView.setText("Hello");
+        
         String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
         if(!hasPermission(permission)) {
@@ -193,9 +192,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showGotoLineDialog() {
-        View v = getLayoutInflater().inflate(R.layout.dialog_gotoline, null);
+        final View v = getLayoutInflater().inflate(R.layout.dialog_gotoline, null);
         final EditText lineEdit = v.findViewById(R.id.lineEdit);
-        lineEdit.setHint("1.." + mTextBuffer.getLineCount());
+        final TextBuffer buffer = mTextView.getTextBuffer();
+        if(buffer != null)
+            lineEdit.setHint("1.." + buffer.getLineCount());
+        else
+            lineEdit.setHint("0");
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setView(v);
@@ -204,8 +207,9 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener(){
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
+                    if(buffer == null) return;
                     String line = lineEdit.getText().toString();
-                    if(line != null && !line.equals("")) {
+                    if(line != null && !line.isEmpty()) {
                         mTextView.gotoLine(Integer.parseInt(line));
                     }
                 }
@@ -301,11 +305,8 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute() {
             // TODO: Implement this method
             super.onPreExecute();
-            mTextView.setEditedMode(false);
             showProgressBarDialig();
-            // create text buffer
-            mTextBuffer = new TextBuffer();
-            mTextView.setTextBuffer(mTextBuffer);
+            mTextView.setEditedMode(false);
         }
 
         @Override
@@ -313,13 +314,22 @@ public class MainActivity extends AppCompatActivity {
             // TODO: Implement this method
             Path path = Paths.get(params[0]);
             if(!FileUtils.checkOpenFileState(path) 
-               && !FileUtils.checkSameFile(path)) 
+               && !FileUtils.checkSameFile(path)) {
+                mHandler.sendEmptyMessage(DISABLE_PROGRESD_DIALOG);
                 return false;
+            }
+                
+            // create text buffer
+            TextBuffer buffer = new TextBuffer();
+            mTextView.setTextBuffer(buffer);
+            buffer.tempLineCount = FileUtils.getLineNumber(path.toFile());
 
-            mTextBuffer.tempLineCount = FileUtils.getLineNumber(path.toFile());
-
+            StringBuilder strBuilder = buffer.getBuffer();
+            ArrayList<Integer> indexList = buffer.getIndexList();
+            ArrayList<Integer> widthList = buffer.getWidthList();
+            
             try {
-                // detect the file encoding
+                // detect the file charset
                 String charset = UniversalDetector.detectCharset(path.toFile());
                 if(charset != null) mDefaultCharset = Charset.forName(charset);
 
@@ -327,41 +337,48 @@ public class MainActivity extends AppCompatActivity {
                 BufferedReader bufferRead = null;
                 bufferRead = Files.newBufferedReader(path, mDefaultCharset);
 
-                StringBuilder buf = mTextBuffer.getBuffer();
                 String text = null;
                 // read file
                 while((text = bufferRead.readLine()) != null) {
-                    buf.append(text + "\n");
+                    strBuilder.append(text + "\n");
 
-                    if(mTextBuffer.getIndexList().size() == 0) {
+                    if(indexList.size() == 0) {
                         // add first index 0
-                        mTextBuffer.getIndexList().add(0);
+                        indexList.add(0);
                         mHandler.sendEmptyMessage(DISABLE_PROGRESD_DIALOG);
                     }
-                    mTextBuffer.getIndexList().add(buf.length());
+                    indexList.add(strBuilder.length());
 
                     // text line width
                     int width = mTextView.getTextMeasureWidth(text);
-                    if(width > mTextBuffer.tempLineWidth)
-                        mTextBuffer.tempLineWidth = width;
-                    mTextBuffer.getWidthList().add(width);
+                    if(width > buffer.tempLineWidth)
+                        buffer.tempLineWidth = width;
+                    widthList.add(width);
+                }
+                
+                if(indexList.size() > 0) {
+                    // remove the last index of '\n'
+                    indexList.remove(indexList.size() - 1);
+                } else {
+                    mHandler.sendEmptyMessage(DISABLE_PROGRESD_DIALOG);
+                    // the file is empty
+                    // set a default empty string
+                    buffer.setBuffer("\n");
                 }
                 // close stream
                 bufferRead.close();
             } catch(Exception e) {
+                e.printStackTrace();
                 Log.e(TAG, e.getMessage());
             }
-            // remove the last index of '\n'
-            int size = mTextBuffer.getIndexList().size();
-            mTextBuffer.getIndexList().remove(size - 1);
-            return true;
+            
+            return buffer.onReadFinish = true;
         }
 
         @Override
         protected void onPostExecute(Boolean result) {
             // TODO: Implement this method
             super.onPostExecute(result);
-            mTextBuffer.onReadFinish = true;
             mTextView.setEditedMode(true);
             mIndeterminateBar.setVisibility(View.GONE);
         }
@@ -381,7 +398,7 @@ public class MainActivity extends AppCompatActivity {
                 BufferedWriter bufferWrite = null;
                 bufferWrite = Files.newBufferedWriter(path, mDefaultCharset, 
                                                       StandardOpenOption.WRITE);
-                bufferWrite.write(mTextBuffer.getBuffer().toString());     
+                bufferWrite.write(mTextView.getTextBuffer().getBuffer().toString());     
                 bufferWrite.flush();
                 bufferWrite.close();
             } catch(Exception e) {
@@ -394,7 +411,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean result) {
             // TODO: Implement this method
             super.onPostExecute(result);
-            mTextBuffer.onWriteFinish = true;
+            mTextView.getTextBuffer().onWriteFinish = true;
             Toast.makeText(getApplicationContext(), "saved success!", Toast.LENGTH_SHORT).show();
         }
     }
