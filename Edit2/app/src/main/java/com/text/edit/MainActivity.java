@@ -314,7 +314,7 @@ public class MainActivity extends AppCompatActivity {
             // TODO: Implement this method
             Path path = Paths.get(params[0]);
             if(!FileUtils.checkOpenFileState(path) 
-               && !FileUtils.checkSameFile(path)) {
+               && FileUtils.checkSameFile(path)) {
                 mHandler.sendEmptyMessage(DISABLE_PROGRESD_DIALOG);
                 return false;
             }
