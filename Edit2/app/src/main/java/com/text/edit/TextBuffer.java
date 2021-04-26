@@ -200,7 +200,9 @@ public class TextBuffer implements Serializable {
      * @parama line: the cursor line
      * @parama vline: the visable line on screen
      */
-    public synchronized void insert(int index, CharSequence c, int line, int vline) {
+    public synchronized void insert(int index, CharSequence c, 
+                                    int line, int vline, 
+                                    HighlightTextView textView) {
         // real insert text
         strBuilder.insert(index, c);
 
@@ -209,7 +211,7 @@ public class TextBuffer implements Serializable {
 
         // calculate the line width
         String text = indexOfLineText(start);
-        int width = HighlightTextView.getTextMeasureWidth(text);
+        int width = textView.getTextMeasureWidth(text);
         if(width > tempWidth) {
             tempWidth = width;
         }
@@ -221,7 +223,7 @@ public class TextBuffer implements Serializable {
                 start = i + 1;
                 text = indexOfLineText(start);
                 // text line width
-                width = HighlightTextView.getTextMeasureWidth(text);
+                width = textView.getTextMeasureWidth(text);
                 if(width > tempWidth) {
                     tempWidth = width;
                 }
@@ -245,7 +247,9 @@ public class TextBuffer implements Serializable {
     }
 
     // delete text
-    public synchronized void delete(int start, int end, int line, int vline) {   
+    public synchronized void delete(int start, int end, 
+                                    int line, int vline, 
+                                    HighlightTextView textView) {   
         int length = end - start;
         for(int i=start; i < end; ++i) {
             if(strBuilder.charAt(i) == '\n') {
@@ -261,7 +265,7 @@ public class TextBuffer implements Serializable {
 
         // calculate the line width
         String text = getLine(line);
-        int width = HighlightTextView.getTextMeasureWidth(text);
+        int width = textView.getTextMeasureWidth(text);
         if(width > tempWidth)
             tempWidth = width;
         widthList.set(line - 1, width);
@@ -280,13 +284,14 @@ public class TextBuffer implements Serializable {
     }
 
     // replace text
-    public synchronized void replace(int start, int end, 
-                                     String replacement, int line, int delta) {
+    public synchronized void replace(int start, int end, String replacement, 
+                                     int line, int vline, int delta,
+                                     HighlightTextView textView) {
         if(replacement.contains("\n")) {
             // the lists needs add new line
             // replace = delete + insert
             strBuilder.delete(start, end);
-            insert(start, replacement, line, 24);
+            insert(start, replacement, line, vline, textView);
         } else {
             // real replace
             strBuilder.replace(start, end, replacement);

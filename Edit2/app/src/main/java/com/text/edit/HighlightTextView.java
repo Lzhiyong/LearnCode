@@ -663,7 +663,7 @@ public class HighlightTextView extends View {
         }
 
         // real insert
-        mTextBuffer.insert(mCursorIndex, c, mCursorLine, getVisableLine());
+        mTextBuffer.insert(mCursorIndex, c, mCursorLine, getVisableLine(), this);
 
         // add undo stack action
         if(action != null) {
@@ -710,7 +710,7 @@ public class HighlightTextView extends View {
 
         String deleteText = mTextBuffer.getText(start, end);
         // real delete
-        mTextBuffer.delete(start, end, mCursorLine, getVisableLine());
+        mTextBuffer.delete(start, end, mCursorLine, getVisableLine(), this);
 
         // add undo stack action
         if(action != null && deleteText != null) {
@@ -836,7 +836,7 @@ public class HighlightTextView extends View {
             adjustSelectHandle(start + length, start + length);
 
             int delta = start + length - end;
-            mTextBuffer.replace(start, end, replacement, mCursorLine, delta);
+            mTextBuffer.replace(start, end, replacement, mCursorLine, getVisableLine(), delta, this);
 
             // remove the first item
             mReplaceList.remove(0);
