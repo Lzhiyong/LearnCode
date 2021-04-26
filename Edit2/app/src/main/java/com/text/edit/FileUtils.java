@@ -17,6 +17,11 @@ public class FileUtils {
         fileLists.add(pathname);
     }
     
+    public static void removeOpenedFile(String pathname){
+        if(fileLists.size() > 0)
+            fileLists.remove(pathname);
+    }
+
     public static HashSet<String> getOpenedFileList() {
         return fileLists;
     }

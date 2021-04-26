@@ -1,8 +1,11 @@
 package com.text.edit;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class TextBuffer implements Serializable {
 
@@ -14,20 +17,24 @@ public class TextBuffer implements Serializable {
 
     // the width of each line text
     private ArrayList<Integer> widthList = new ArrayList<>();
-    
+
     // load text dynamically if the text content is too large
     // implement a loading progress bar
-    public static int tempLineCount = 0;
-    public static int tempLineWidth = 0;
-    
+    public static int tempCount = 0;
+    // the text max width
+    public static int tempWidth = 0;
+
     // the text read finish
     public static boolean onReadFinish = false;
     // the text write finish
     public static boolean onWriteFinish = false;
-    
+
+    private int visLine, delta;
+
     private final String TAG = this.getClass().getSimpleName();
-    
-    
+
+    private Handler handler = new Handler(Looper.getMainLooper());
+
     public TextBuffer() {
         // nothing to do
     }
@@ -40,25 +47,31 @@ public class TextBuffer implements Serializable {
         emptyBuffer();
         // add a dafault new line
         strBuilder.append(c + "\n");
-        // add first index 0
-        indexList.add(0);
         // line start index
         int start = 0;
         for(int i=0; i < getLength(); ++i) {           
             if(getCharAt(i) == '\n') {
-                String text = getText(start, i + 1);
-                tempLineWidth = HighlightTextView.getTextMeasureWidth(text);
-                widthList.add(tempLineWidth);
+                if(indexList.size() == 0) {
+                    // add first index 0
+                    indexList.add(0);
+                }
                 indexList.add(i + 1);
+
+                // the text width
+                String text = getText(start, i + 1);
+                int width = HighlightTextView.getTextMeasureWidth(text);
+                widthList.add(width);
+                if(width > tempWidth)
+                    tempWidth = width;
+
                 start = i + 1;
-                ++tempLineCount;
+                ++tempCount;
             }
         }
-        
         // remove the last index of '\n'
         indexList.remove(indexList.size() - 1);
-        Log.i(TAG, "size: " + indexList.size());
         onReadFinish = true;
+        Log.i(TAG, "size: " + indexList.size());
     }
 
     public void setBuffer(StringBuilder strBuilder) {
@@ -77,7 +90,7 @@ public class TextBuffer implements Serializable {
             widthList.clear();
             strBuilder.delete(0, strBuilder.length());
             onReadFinish = onWriteFinish = false;
-            tempLineCount = tempLineWidth = 0;
+            tempCount = tempWidth = 0;
         }
     }
 
@@ -87,8 +100,14 @@ public class TextBuffer implements Serializable {
 
     // Get the text line count
     public int getLineCount() {
-        return indexList.size();
+        // don't use the lineCount
+        return onReadFinish ? indexList.size(): tempCount;
     }
+
+    // return the text max width
+    public int getMaxWidth() {
+        return tempWidth;
+    }  
 
     // Set the text line index lists
     public void setIndexList(ArrayList<Integer> list) {
@@ -125,6 +144,7 @@ public class TextBuffer implements Serializable {
             else
                 low = line;
         }
+
         // find the cursor line
         return line;
     }
@@ -173,52 +193,67 @@ public class TextBuffer implements Serializable {
         return strBuilder.substring(start, end);
     }
 
-    // insert text
-    public synchronized void insert(int index, CharSequence c, int line) {
+    /**
+     * insert text
+     *
+     * @parama index: the cursor index
+     * @parama line: the cursor line
+     * @parama vline: the visable line on screen
+     */
+    public synchronized void insert(int index, CharSequence c, int line, int vline) {
         // real insert text
         strBuilder.insert(index, c);
 
         int length = c.length();
-        int lineStart = getLineStart(line);
+        int start = getLineStart(line);
 
         // calculate the line width
-        String text = indexOfLineText(lineStart);
-        int lineWidth = HighlightTextView.getTextMeasureWidth(text);
-        widthList.set(line - 1, lineWidth);
+        String text = indexOfLineText(start);
+        int width = HighlightTextView.getTextMeasureWidth(text);
+        if(width > tempWidth) {
+            tempWidth = width;
+        }
+
+        widthList.set(line - 1, width);
 
         for(int i=index; i < index + length; ++i) {
             if(strBuilder.charAt(i) == '\n') {
-                lineStart = i + 1;
-                text = indexOfLineText(lineStart);
-                lineWidth = HighlightTextView.getTextMeasureWidth(text);
-
-                indexList.add(line, lineStart);
-                widthList.add(line, lineWidth);
+                start = i + 1;
+                text = indexOfLineText(start);
+                // text line width
+                width = HighlightTextView.getTextMeasureWidth(text);
+                if(width > tempWidth) {
+                    tempWidth = width;
+                }
+                indexList.add(line, start);
+                widthList.add(line, width);
+                ++tempCount;
                 ++line;
             }
         }
 
+        visLine = line + vline;
+        delta += length;
+
         // calculation the line start index
-        for(int i=line; i < getLineCount(); ++i) {
+        for(int i=line; i < visLine && visLine < getLineCount(); ++i) {
             indexList.set(i, indexList.get(i) + length);
         }
+
+        handler.removeCallbacks(CalcuAction);
+        handler.postDelayed(CalcuAction, 5);
     }
 
     // delete text
-    public synchronized void delete(int start, int end, int line) {   
+    public synchronized void delete(int start, int end, int line, int vline) {   
         int length = end - start;
-
         for(int i=start; i < end; ++i) {
             if(strBuilder.charAt(i) == '\n') {
                 indexList.remove(line - 1);
                 widthList.remove(line - 1);
+                --tempCount;
                 --line;
             }
-        }
-
-        // calculation the line start index
-        for(int i=line; i < getLineCount(); ++i) {
-            indexList.set(i, indexList.get(i) - length);
         }
 
         // real delete text
@@ -226,8 +261,22 @@ public class TextBuffer implements Serializable {
 
         // calculate the line width
         String text = getLine(line);
-        int lineWidth = HighlightTextView.getTextMeasureWidth(text);
-        widthList.set(line - 1, lineWidth);
+        int width = HighlightTextView.getTextMeasureWidth(text);
+        if(width > tempWidth)
+            tempWidth = width;
+        widthList.set(line - 1, width);
+
+        visLine = line + vline;
+        delta += length;
+
+        // calculation the line start index
+        for(int i=line; i < visLine && visLine < getLineCount(); ++i) {
+            indexList.set(i, indexList.get(i) - length);
+        }
+
+
+        handler.removeCallbacks(CalcuAction);
+        handler.postDelayed(CalcuAction, 5);
     }
 
     // replace text
@@ -237,7 +286,7 @@ public class TextBuffer implements Serializable {
             // the lists needs add new line
             // replace = delete + insert
             strBuilder.delete(start, end);
-            insert(start, replacement, line);
+            insert(start, replacement, line, 24);
         } else {
             // real replace
             strBuilder.replace(start, end, replacement);
@@ -249,4 +298,17 @@ public class TextBuffer implements Serializable {
             }
         }
     }
+
+    private Runnable CalcuAction = new Runnable() {
+        @Override
+        public void run() {
+            // TODO: Implement this method
+            // calculation the line start index
+            for(int i=visLine; i < getLineCount(); ++i) 
+                indexList.set(i, indexList.get(i) + delta);
+            delta = 0;
+            // calculate the line width
+            tempWidth = Collections.max(widthList);
+        }
+    };
 }

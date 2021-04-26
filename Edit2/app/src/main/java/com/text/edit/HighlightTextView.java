@@ -177,13 +177,11 @@ public class HighlightTextView extends View {
     public void setTextBuffer(TextBuffer textBuffer) {
         mTextBuffer = textBuffer;
         setDefaultCursorPosition();
-        postInvalidate();
     }
 
     public void setText(CharSequence c) {
         mTextBuffer = new TextBuffer(c);
         setDefaultCursorPosition();
-        postInvalidate();
     }
 
     public TextBuffer getTextBuffer() {
@@ -193,7 +191,7 @@ public class HighlightTextView extends View {
     public void setDefaultCursorPosition() {
         int lineNumberWidth = 0;
         if(mTextBuffer != null)
-            lineNumberWidth = getLineNumberWidth(mTextBuffer.getLineCount());
+            lineNumberWidth = getLineNumberWidth();
         else
             lineNumberWidth = getCharWidth('0');
         mCursorPosX = getPaddingLeft() + lineNumberWidth + SPACEING;
@@ -218,7 +216,6 @@ public class HighlightTextView extends View {
         lineHeight = metrics.bottom - metrics.top;
 
         if(mTextBuffer != null) {
-
             // max width line index
             int line = mTextBuffer.getWidthList().indexOf(getTextWidth());
             mTextBuffer.getWidthList().set(line, getLineWidth(line + 1));
@@ -254,9 +251,13 @@ public class HighlightTextView extends View {
     }
 
     private int getLeftSpace() {
-        return getPaddingLeft() + getLineNumberWidth(getLineCount()) + SPACEING;
+        return getPaddingLeft() + getLineNumberWidth() + SPACEING;
     }
 
+    public int getVisableLine() {
+        return getHeight() / getLineHeight() + 1;
+    }
+    
     public static int getTextMeasureWidth(String text) {
         return (int) mTextPaint.measureText(text);
     }
@@ -264,9 +265,9 @@ public class HighlightTextView extends View {
     private int getLineHeight() {
         return lineHeight;
     }
-
+    
     private int getLineCount() {
-        return mTextBuffer.onReadFinish ? mTextBuffer.getLineCount() : mTextBuffer.getLineCount() - 1;
+        return mTextBuffer.getLineCount();
     }
 
     private int getCharWidth(char c) {
@@ -277,10 +278,8 @@ public class HighlightTextView extends View {
         return getCharWidth(mTextBuffer.getCharAt(index));
     }
 
-    private int getLineNumberWidth(int line) {
-        return mTextBuffer.onReadFinish ? 
-            String.valueOf(line).length() * getCharWidth('0'):
-            String.valueOf(mTextBuffer.tempLineCount).length() * getCharWidth('0');
+    private int getLineNumberWidth() {
+        return String.valueOf(getLineCount()).length() * getCharWidth('0');
     }
 
     private int getLineStart(int line) {
@@ -293,8 +292,7 @@ public class HighlightTextView extends View {
 
     // get the max width of text
     private int getTextWidth() {
-        return mTextBuffer.onReadFinish ? 
-            Collections.max(mTextBuffer.getWidthList()): mTextBuffer.tempLineWidth;
+        return mTextBuffer.getMaxWidth();
     }
 
     // get the max height of text
@@ -505,7 +503,7 @@ public class HighlightTextView extends View {
         int endLine = Math.min(canvas.getClipBounds().bottom / getLineHeight() + 1, getLineCount());
 
         // the text line width
-        int lineNumWidth = getLineNumberWidth(getLineCount());
+        int lineNumWidth = getLineNumberWidth();
 
         // draw text line[start..end]
         for(int i=startLine; i <= endLine; ++i) {
@@ -533,7 +531,7 @@ public class HighlightTextView extends View {
     protected void onDraw(Canvas canvas) {
         // TODO: Implement this method
         super.onDraw(canvas);
-        if(mTextBuffer == null || getLineCount() <= 0) {
+        if(mTextBuffer == null || mTextBuffer.getLength() == 0) {
             canvas.drawText(mDefaultText, 
                             getWidth() / 2 - getTextMeasureWidth(mDefaultText) / 2, 
                             getHeight() / 2 - getLineHeight(), 
@@ -575,7 +573,7 @@ public class HighlightTextView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         // TODO: Implement this method
-        if(mTextBuffer == null || getLineCount() <= 0) {
+        if(mTextBuffer == null || mTextBuffer.getLength() == 0) {
             // no text content, return false directly 
             return false;
         }
@@ -592,7 +590,8 @@ public class HighlightTextView extends View {
         // gesture detector
         mGestureDetector.onTouchEvent(event);
         // scale gesture detector
-        mScaleGestureDetector.onTouchEvent(event);
+        if(event.getPointerCount() == 2)
+            mScaleGestureDetector.onTouchEvent(event);
         return true;
     }
 
@@ -664,7 +663,7 @@ public class HighlightTextView extends View {
         }
 
         // real insert
-        mTextBuffer.insert(mCursorIndex, c, mCursorLine);
+        mTextBuffer.insert(mCursorIndex, c, mCursorLine, getVisableLine());
 
         // add undo stack action
         if(action != null) {
@@ -711,7 +710,7 @@ public class HighlightTextView extends View {
 
         String deleteText = mTextBuffer.getText(start, end);
         // real delete
-        mTextBuffer.delete(start, end, mCursorLine);
+        mTextBuffer.delete(start, end, mCursorLine, getVisableLine());
 
         // add undo stack action
         if(action != null && deleteText != null) {
