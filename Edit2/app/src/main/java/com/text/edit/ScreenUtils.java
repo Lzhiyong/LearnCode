@@ -71,5 +71,5 @@ public final class ScreenUtils {
     public static int sp2px(float spValue, float fontScale) {
         return (int) (spValue * fontScale + 0.5f);
     }
-    
+ 
 }

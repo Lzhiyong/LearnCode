@@ -333,7 +333,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     // the file is empty
                     // set a default empty string
-                    mTextBuffer.setBuffer("\n");
+                    mTextBuffer.setBuffer("");
                 }
                 // close stream
                 fis.close();

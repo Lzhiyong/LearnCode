@@ -257,7 +257,7 @@ public class HighlightTextView extends View {
     public int getVisableLine() {
         return getHeight() / getLineHeight() + 1;
     }
-    
+
     public static int getTextMeasureWidth(String text) {
         return (int) mTextPaint.measureText(text);
     }
@@ -265,7 +265,7 @@ public class HighlightTextView extends View {
     private int getLineHeight() {
         return lineHeight;
     }
-    
+
     private int getLineCount() {
         return mTextBuffer.getLineCount();
     }
@@ -651,7 +651,7 @@ public class HighlightTextView extends View {
         int length = c.length();
         String insertText = c.toString();
         String deleteText = null;
-        
+
         if(isSelectMode) {
             // no need to add action
             deleteText = mTextBuffer.getText(selectionStart, selectionEnd);
@@ -663,7 +663,7 @@ public class HighlightTextView extends View {
         }
 
         // real insert
-        mTextBuffer.insert(mCursorIndex, c, mCursorLine, getVisableLine(), this);
+        mTextBuffer.insert(mCursorIndex, c, mCursorLine);
 
         // add undo stack action
         if(action != null) {
@@ -710,7 +710,7 @@ public class HighlightTextView extends View {
 
         String deleteText = mTextBuffer.getText(start, end);
         // real delete
-        mTextBuffer.delete(start, end, mCursorLine, getVisableLine(), this);
+        mTextBuffer.delete(start, end, mCursorLine);
 
         // add undo stack action
         if(action != null && deleteText != null) {
@@ -836,7 +836,7 @@ public class HighlightTextView extends View {
             adjustSelectHandle(start + length, start + length);
 
             int delta = start + length - end;
-            mTextBuffer.replace(start, end, replacement, mCursorLine, getVisableLine(), delta, this);
+            mTextBuffer.replace(start, end, replacement, mCursorLine,delta);
 
             // remove the first item
             mReplaceList.remove(0);

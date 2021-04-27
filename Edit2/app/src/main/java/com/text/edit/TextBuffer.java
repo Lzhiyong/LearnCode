@@ -6,6 +6,10 @@ import android.util.Log;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class TextBuffer implements Serializable {
 
@@ -24,15 +28,15 @@ public class TextBuffer implements Serializable {
     // the text max width
     public static int tempWidth = 0;
 
+    private int visLine, delta;
+
     // the text read finish
     public static boolean onReadFinish = false;
     // the text write finish
     public static boolean onWriteFinish = false;
 
-    private int visLine, delta;
-
     private final String TAG = this.getClass().getSimpleName();
-
+    ExecutorService exec =  Executors.newFixedThreadPool(2);
     private Handler handler = new Handler(Looper.getMainLooper());
 
     public TextBuffer() {
@@ -200,9 +204,7 @@ public class TextBuffer implements Serializable {
      * @parama line: the cursor line
      * @parama vline: the visable line on screen
      */
-    public synchronized void insert(int index, CharSequence c, 
-                                    int line, int vline, 
-                                    HighlightTextView textView) {
+    public synchronized void insert(int index, CharSequence c, int line) {
         // real insert text
         strBuilder.insert(index, c);
 
@@ -211,11 +213,10 @@ public class TextBuffer implements Serializable {
 
         // calculate the line width
         String text = indexOfLineText(start);
-        int width = textView.getTextMeasureWidth(text);
+        int width = HighlightTextView.getTextMeasureWidth(text);
         if(width > tempWidth) {
             tempWidth = width;
         }
-
         widthList.set(line - 1, width);
 
         for(int i=index; i < index + length; ++i) {
@@ -223,7 +224,7 @@ public class TextBuffer implements Serializable {
                 start = i + 1;
                 text = indexOfLineText(start);
                 // text line width
-                width = textView.getTextMeasureWidth(text);
+                width = HighlightTextView.getTextMeasureWidth(text);
                 if(width > tempWidth) {
                     tempWidth = width;
                 }
@@ -234,22 +235,20 @@ public class TextBuffer implements Serializable {
             }
         }
 
-        visLine = line + vline;
+        visLine = line + 100;
         delta += length;
 
         // calculation the line start index
-        for(int i=line; i < visLine && visLine < getLineCount(); ++i) {
+        for(int i=line; i < visLine && i < getLineCount(); ++i) {
             indexList.set(i, indexList.get(i) + length);
         }
 
-        handler.removeCallbacks(CalcuAction);
-        handler.postDelayed(CalcuAction, 5);
+        handler.removeCallbacks(calculate);
+        handler.postDelayed(calculate, 5);
     }
 
     // delete text
-    public synchronized void delete(int start, int end, 
-                                    int line, int vline, 
-                                    HighlightTextView textView) {   
+    public synchronized void delete(int start, int end, int line) {   
         int length = end - start;
         for(int i=start; i < end; ++i) {
             if(strBuilder.charAt(i) == '\n') {
@@ -265,33 +264,32 @@ public class TextBuffer implements Serializable {
 
         // calculate the line width
         String text = getLine(line);
-        int width = textView.getTextMeasureWidth(text);
+        int width = HighlightTextView.getTextMeasureWidth(text);
         if(width > tempWidth)
             tempWidth = width;
         widthList.set(line - 1, width);
 
-        visLine = line + vline;
-        delta += length;
-
+        visLine = line + 100;
+        delta -= length;
+        
         // calculation the line start index
-        for(int i=line; i < visLine && visLine < getLineCount(); ++i) {
+        for(int i=line; i < visLine && i < getLineCount(); ++i) {
             indexList.set(i, indexList.get(i) - length);
         }
 
-
-        handler.removeCallbacks(CalcuAction);
-        handler.postDelayed(CalcuAction, 5);
+        handler.removeCallbacks(calculate);
+        handler.postDelayed(calculate, 5);
     }
 
     // replace text
-    public synchronized void replace(int start, int end, String replacement, 
-                                     int line, int vline, int delta,
-                                     HighlightTextView textView) {
+    public synchronized void replace(int start, int end, 
+                                     String replacement, 
+                                     int line, int delta) {
         if(replacement.contains("\n")) {
             // the lists needs add new line
             // replace = delete + insert
             strBuilder.delete(start, end);
-            insert(start, replacement, line, vline, textView);
+            insert(start, replacement, line);
         } else {
             // real replace
             strBuilder.replace(start, end, replacement);
@@ -304,7 +302,7 @@ public class TextBuffer implements Serializable {
         }
     }
 
-    private Runnable CalcuAction = new Runnable() {
+    private Runnable calculate = new Runnable() {
         @Override
         public void run() {
             // TODO: Implement this method
