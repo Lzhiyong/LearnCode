@@ -58,8 +58,8 @@ public class HighlightTextView extends View {
     private int selectHandleLeftX, selectHandleLeftY;
     private int selectHandleRightX, selectHandleRightY;
 
-    private UndoStack mUndoStack;
     private TextBuffer mTextBuffer;
+    private UndoStack mUndoStack;
 
     private OnTextChangedListener mTextListener;
     private OverScroller mScroller;
@@ -180,7 +180,7 @@ public class HighlightTextView extends View {
     }
 
     public void setText(CharSequence c) {
-        mTextBuffer = new TextBuffer(c);
+        mTextBuffer = new TextBuffer(c, this);
         setDefaultCursorPosition();
     }
 
@@ -217,8 +217,8 @@ public class HighlightTextView extends View {
 
         if(mTextBuffer != null) {
             // max width line index
-            int line = mTextBuffer.getWidthList().indexOf(getTextWidth());
-            mTextBuffer.getWidthList().set(line, getLineWidth(line + 1));
+            //int line = mTextBuffer.getWidthList().indexOf(getTextWidth());
+            //mTextBuffer.getWidthList().set(line, getLineWidth(line + 1));
             adjustCursorPosition(mCursorIndex, mCursorLine);
             if(isSelectMode)
                 adjustSelectHandle(selectionStart, selectionEnd);
@@ -663,7 +663,7 @@ public class HighlightTextView extends View {
         }
 
         // real insert
-        mTextBuffer.insert(mCursorIndex, c, mCursorLine);
+        mTextBuffer.insert(mCursorIndex, c, mCursorLine, this);
 
         // add undo stack action
         if(action != null) {
@@ -710,7 +710,7 @@ public class HighlightTextView extends View {
 
         String deleteText = mTextBuffer.getText(start, end);
         // real delete
-        mTextBuffer.delete(start, end, mCursorLine);
+        mTextBuffer.delete(start, end, mCursorLine, this);
 
         // add undo stack action
         if(action != null && deleteText != null) {
@@ -836,7 +836,7 @@ public class HighlightTextView extends View {
             adjustSelectHandle(start + length, start + length);
 
             int delta = start + length - end;
-            mTextBuffer.replace(start, end, replacement, mCursorLine,delta);
+            mTextBuffer.replace(start, end, replacement, mCursorLine, delta, this);
 
             // remove the first item
             mReplaceList.remove(0);

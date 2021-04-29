@@ -1,6 +1,8 @@
 package com.text.edit;
 
 import android.Manifest;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -33,9 +35,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import org.mozilla.universalchardet.UniversalDetector;
-import java.io.LineNumberReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -106,8 +105,12 @@ public class MainActivity extends AppCompatActivity {
         }
         mTextBuffer = new TextBuffer();
         mTextView.setTextBuffer(mTextBuffer);
-        
-        //new ReadFileThread().execute("/storage/emulated/0/Download/books/doupo.txt");
+
+        ActivityManager mActivityManager =  (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
+        int maxHeapSize = mActivityManager.getLargeMemoryClass();
+        int norHeapSize = mActivityManager.getMemoryClass();
+        Log.i(TAG, "norHeapSize: " + norHeapSize);
+        Log.i(TAG, "maxHeapSize: " + maxHeapSize);
     }
 
 
@@ -291,26 +294,24 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Boolean doInBackground(String...params) {
             // TODO: Implement this method
-            File file = new File(params[0]);
-
+            Path path = Paths.get(params[0]);
+            
             StringBuilder strBuilder = mTextBuffer.getBuffer();
             ArrayList<Integer> indexList = mTextBuffer.getIndexList();
             ArrayList<Integer> widthList = mTextBuffer.getWidthList();
 
             try {
                 // detect the file charset
-                String charset = UniversalDetector.detectCharset(file);
+                String charset = UniversalDetector.detectCharset(path.toFile());
                 if(charset != null) mDefaultCharset = Charset.forName(charset);
 
                 // create buffered reader
-                FileInputStream fis = new FileInputStream(file);
-                InputStreamReader ins = new InputStreamReader(fis, mDefaultCharset);
-                LineNumberReader reader = new LineNumberReader(ins);
+                BufferedReader br = Files.newBufferedReader(path, mDefaultCharset);
 
                 String text = null;
                 // read file
-                while((text = reader.readLine()) != null) {
-                    strBuilder.append(text + "\n");
+                while((text = br.readLine()) != null) {
+                    strBuilder.append(text).append(System.lineSeparator());
 
                     if(indexList.size() == 0) {
                         // add first index 0
@@ -320,11 +321,13 @@ public class MainActivity extends AppCompatActivity {
 
                     // text line width
                     int width = mTextView.getTextMeasureWidth(text);
-                    if(width > mTextBuffer.tempWidth) 
-                        mTextBuffer.tempWidth = width;
+                    if(width > mTextBuffer.lineWidth) {
+                        mTextBuffer.lineWidth = width;
+                        mTextBuffer.lineIndex = mTextBuffer.lineCount;
+                    }
                     widthList.add(width);
                     // line count
-                    mTextBuffer.tempCount = reader.getLineNumber() + 1;
+                    ++mTextBuffer.lineCount;
                 }
 
                 if(indexList.size() > 0) {
@@ -333,12 +336,10 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     // the file is empty
                     // set a default empty string
-                    mTextBuffer.setBuffer("");
+                    mTextBuffer.setBuffer("", mTextView);
                 }
-                // close stream
-                fis.close();
-                ins.close();
-                reader.close();
+                // close the stream
+                br.close();
             } catch(Exception e) {
                 e.printStackTrace();
                 Log.e(TAG, e.getMessage());
